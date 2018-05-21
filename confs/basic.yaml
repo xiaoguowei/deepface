@@ -1,0 +1,9 @@
+detector:
+  dlib:
+    scale: 1
+    score_th: 0.1
+
+recognizer:
+  topk: 5
+  score_th: 0.2
+  vgg:
