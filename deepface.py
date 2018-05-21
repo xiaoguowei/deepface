@@ -26,21 +26,21 @@ class DeepFace:
         self.detector = None
         self.recognizer = None
 
-    def set_detector(self, detector='detector_dlib'):
-        if self.detector is not None and self.detector.name == detector:
+    def set_detector(self, detector):
+        if self.detector is not None and self.detector.name() == detector:
             return
+        logger.debug('set_detector old=%s new=%s' % (self.detector, detector))
         if detector == FaceDetectorDlib.NAME:
             self.detector = FaceDetectorDlib()
-        logger.debug('new detector=%s initialized.' % detector)
 
-    def set_recognizer(self, recognizer='recognizer_vgg'):
-        if self.recognizer is not None and self.recognizer.name == recognizer:
+    def set_recognizer(self, recognizer):
+        if self.recognizer is not None and self.recognizer.name() == recognizer:
             return
+        logger.debug('set_recognizer old=%s new=%s' % (self.recognizer, recognizer))
         if recognizer == FaceRecognizerVGG.NAME:
             self.recognizer = FaceRecognizerVGG()
-        logger.debug('new recognizer=%s initialized.' % recognizer)
 
-    def run(self, detector='detector_dlib', recognizer='recognizer_vgg', image='./samples/ak.jpg', visualize=False):
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg', visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
 
@@ -70,6 +70,7 @@ class DeepFace:
             logger.debug('run face recognition+')
             result = self.recognizer.detect(rois)
             logger.debug('run face recognition-')
+            print(result['name'])
             for face_idx, face in enumerate(faces):
                 face.face_feature = result['feature'][face_idx]
                 name, score = result['name'][face_idx][0]
@@ -80,9 +81,28 @@ class DeepFace:
 
         img = draw_bboxs(np.copy(npimg), faces)
         cv2.imwrite('result.jpg', img)
-        if visualize:
+        if visualize and visualize not in ['false', 'False']:
             cv2.imshow('DeepFace', img)
             cv2.waitKey(0)
+
+        return faces
+
+    def save_features(self):
+        name_paths = [
+            ('jisoo', './samples/blackpink/blackpink_js1.jpg'),
+            ('jennie', './samples/blackpink/blackpink_jn1.jpg'),
+            ('lisa', './samples/blackpink/blackpink_lisa1.jpg'),
+            ('rose', './samples/blackpink/blackpink_rose1.jpg'),
+        ]
+        features = {}
+        for name, path in name_paths:
+            faces = self.run(image=path)
+
+            features[name] = faces[0].face_feature
+
+        import pickle
+        with open('db.pkl', 'wb') as f:
+            pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == '__main__':

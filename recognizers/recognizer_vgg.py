@@ -6,11 +6,13 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from scipy.io import loadmat
+import pickle
 
 from confs.conf import DeepFaceConfs
+from recognizers.recognizer_base import FaceRecognizer
 
 
-class FaceRecognizerVGG:
+class FaceRecognizerVGG(FaceRecognizer):
     NAME = 'recognizer_vgg'
 
     def __init__(self):
@@ -65,6 +67,12 @@ class FaceRecognizerVGG:
 
         self.graph = tf.get_default_graph()
         self.persistent_sess = tf.Session(graph=self.graph)
+        self.db = None
+
+        db_path = DeepFaceConfs.get()['recognizer']['vgg'].get('db', '')
+        if db_path:
+            with open(os.path.join(dir_path, db_path), 'rb') as f:
+                self.db = pickle.load(f)
 
     def name(self):
         return FaceRecognizerVGG.NAME
@@ -81,8 +89,23 @@ class FaceRecognizerVGG:
         probs, feats = self.persistent_sess.run([self.network['prob'], self.network['fc7']], feed_dict={
             self.input_node: new_rois
         })
+        feats = [np.squeeze(x) for x in feats]
+        if self.db is None:
+            names = [[(self.class_names[idx], prop[idx]) for idx in prop.argsort()[-DeepFaceConfs.get()['recognizer']['topk']:][::-1]] for prop in probs]
+        else:
+            # TODO
+            names = []
+            for feat in feats:
+                scores = []
+                for db_name, db_feature in self.db.items():
+                    similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
+                    print(db_name, similarity)
+                    scores.append((db_name, similarity))
+                scores.sort(key=lambda x: x[1], reverse=True)
+                names.append(scores)
+
         return {
             'output': probs,
             'feature': feats,
-            'name': [[(self.class_names[idx], prop[idx]) for idx in prop.argsort()[-DeepFaceConfs.get()['recognizer']['topk']:][::-1]] for prop in probs]
+            'name': names
         }
