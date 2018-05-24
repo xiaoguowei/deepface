@@ -31,7 +31,7 @@ A baseline model use dlib face detection module to crop rois. Then they will be 
 
 ### Test on a image
 
-```python3
+```bash
 $ python3 deepface.py run --visualize=true --image=./samples/blackpink/blackpink1.jpg
 ```
 

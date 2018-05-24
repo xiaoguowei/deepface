@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 import sys
 import cv2
 import numpy as np
@@ -117,7 +118,7 @@ class DeepFace:
         with open('db.pkl', 'wb') as f:
             pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
 
-    def test_lfw(self, set='test', visualize=True):
+    def test_lfw(self, set='test', model='baseline', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
         else:
@@ -207,14 +208,16 @@ class DeepFace:
         logger.info('1-eer=%.4f' % (1.0 - eer))
 
         if visualize in [True, 'True', 'true', 1, '1']:
-            plt.title('Experiment on LFW')
             fig = plt.figure()
             a = fig.add_subplot(1, 2, 1)
-            plt.plot(fpr, tpr)
+            plt.title('Experiment on LFW')
+            plt.plot(fpr, tpr, label='%s(%.4f)' % (model, 1-eer))    # TODO : label
+
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.05])
             plt.xlabel('False Positive Rate')
             plt.ylabel('True Positive Rate')
+            a.legend()
             a.set_title('Receiver operating characteristic')
 
             a = fig.add_subplot(1, 2, 2)
@@ -223,9 +226,25 @@ class DeepFace:
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.05])
             a.legend()
-            a.set_title('TP, TN')
+            a.set_title('%s : TP, TN' % model)
 
             plt.show()
+            plt.draw()
+            fig.savefig('./etc/roc.png', dpi=300)
+
+        with open('./etc/test_lfw.pkl', 'rb') as f:
+            results = pickle.load(f)
+
+        with open('./etc/test_lfw.pkl', 'wb') as f:
+            results[model] = {
+                'fpr': fpr,
+                'tpr': tpr,
+                'acc_th': acc_th,
+                'accuracy0': accuracy0,
+                'accuracy1': accuracy1,
+                'eer': eer
+            }
+            pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
         return 1.0 - eer
 
