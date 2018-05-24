@@ -1,4 +1,7 @@
+import os
+
 import dlib
+import numpy as np
 
 from confs.conf import DeepFaceConfs
 from detectors.detector_base import FaceDetector
@@ -6,11 +9,19 @@ from utils.bbox import BoundingBox
 
 
 class FaceDetectorDlib(FaceDetector):
+    """
+    reference : https://www.pyimagesearch.com/2017/04/03/facial-landmarks-dlib-opencv-python/
+    """
     NAME = 'detector_dlib'
 
     def __init__(self):
         super().__init__()
         self.detector = dlib.get_frontal_face_detector()
+        predictor_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            DeepFaceConfs.get()['detector']['dlib']['landmark_detector']
+        )
+        self.predictor = dlib.shape_predictor(predictor_path)
         self.upsample_scale = DeepFaceConfs.get()['detector']['dlib']['scale']
 
     def name(self):
@@ -23,10 +34,27 @@ class FaceDetectorDlib(FaceDetector):
             if score < DeepFaceConfs.get()['detector']['dlib']['score_th']:
                 continue
 
-            x = det.left()
-            y = det.top()
-            w = det.right() - det.left()
-            h = det.bottom() - det.top()
+            x = max(det.left(), 0)
+            y = max(det.top(), 0)
+            w = min(det.right() - det.left(), npimg.shape[1] - x)
+            h = min(det.bottom() - det.top(), npimg.shape[0] - y)
+
+            if w <= 1 or h <= 1:
+                continue
+
             bbox = BoundingBox(x, y, w, h, score)
+
+            # find landmark
+            shape = self.predictor(npimg, det)
+            coords = np.zeros((68, 2), dtype=np.int)
+
+            # loop over the 68 facial landmarks and convert them
+            # to a 2-tuple of (x, y)-coordinates
+            for i in range(0, 68):
+                coords[i] = (shape.part(i).x, shape.part(i).y)
+            bbox.face_landmark = coords
+
             faces.append(bbox)
+
+        faces = sorted(faces, key=lambda x: x.score, reverse=True)
         return faces

@@ -10,12 +10,14 @@ import pickle
 
 from confs.conf import DeepFaceConfs
 from recognizers.recognizer_base import FaceRecognizer
+from utils.common import grouper, rotate_dot
 
 
 class FaceRecognizerVGG(FaceRecognizer):
     NAME = 'recognizer_vgg'
 
     def __init__(self):
+        self.batch_size = 4
         dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'vggface')
         filename = 'weight.mat'
         filepath = os.path.join(dir_path, filename)
@@ -30,14 +32,16 @@ class FaceRecognizerVGG(FaceRecognizer):
         classes = meta['classes']
         normalization = meta['normalization']
 
-        self.average_image = np.squeeze(normalization[0][0]['averageImage'][0][0][0][0])
+        self.average_image = np.squeeze(normalization[0][0]['averageImage'][0][0][0][0]).reshape(1, 1, 1, 3)
         self.input_hw = tuple(np.squeeze(normalization[0][0]['imageSize'][0][0])[:2])
         self.input_node = tf.placeholder(tf.float32, shape=(None, self.input_hw[0], self.input_hw[1], 3), name='image')
         self.class_names = [str(x[0][0]) for x in classes[0][0]['description'][0][0]]
 
+        input_norm = tf.subtract(self.input_node, self.average_image, name='normalized_image')
+
         # read layer info
         layers = data['layers']
-        current = self.input_node
+        current = input_norm
         network = {}
         for layer in layers[0]:
             name = layer[0]['name'][0][0]
@@ -74,22 +78,37 @@ class FaceRecognizerVGG(FaceRecognizer):
             with open(os.path.join(dir_path, db_path), 'rb') as f:
                 self.db = pickle.load(f)
 
+        # warm-up
+        self.persistent_sess.run([self.network['prob'], self.network['fc7']], feed_dict={
+            self.input_node: np.zeros((self.batch_size, 224, 224, 3), dtype=np.uint8)
+        })
+
     def name(self):
         return FaceRecognizerVGG.NAME
 
     def detect(self, rois):
         new_rois = []
         for roi in rois:
-            if roi.shape[0] != self.input_hw[0] or rois.shape[1] != self.input_hw[1]:
+            if roi.shape[0] != self.input_hw[0] or roi.shape[1] != self.input_hw[1]:
                 new_roi = cv2.resize(roi, self.input_hw, interpolation=cv2.INTER_AREA)
+                # new_roi = cv2.cvtColor(new_roi, cv2.COLOR_BGR2RGB)
                 new_rois.append(new_roi)
             else:
+                # roi = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
                 new_rois.append(roi)
 
-        probs, feats = self.persistent_sess.run([self.network['prob'], self.network['fc7']], feed_dict={
-            self.input_node: new_rois
-        })
-        feats = [np.squeeze(x) for x in feats]
+        probs = []
+        feats = []
+        for roi_chunk in grouper(new_rois, self.batch_size, fillvalue=np.zeros((self.input_hw[0], self.input_hw[1], 3), dtype=np.uint8)):
+            prob, feat = self.persistent_sess.run([self.network['prob'], self.network['fc7']], feed_dict={
+                self.input_node: roi_chunk
+            })
+            feat = [np.squeeze(x) for x in feat]
+            probs.append(prob)
+            feats.append(feat)
+        probs = np.vstack(probs)[:len(rois)]
+        feats = np.vstack(feats)[:len(rois)]
+
         if self.db is None:
             names = [[(self.class_names[idx], prop[idx]) for idx in prop.argsort()[-DeepFaceConfs.get()['recognizer']['topk']:][::-1]] for prop in probs]
         else:
@@ -99,7 +118,6 @@ class FaceRecognizerVGG(FaceRecognizer):
                 scores = []
                 for db_name, db_feature in self.db.items():
                     similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
-                    print(db_name, similarity)
                     scores.append((db_name, similarity))
                 scores.sort(key=lambda x: x[1], reverse=True)
                 names.append(scores)
