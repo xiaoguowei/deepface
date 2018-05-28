@@ -90,6 +90,7 @@ class DeepFace:
                 logger.debug('run face recognition-')
                 for face_idx, face in enumerate(faces):
                     face.face_feature = result['feature'][face_idx]
+                    logger.debug('candidates: %s' % result['name'][face_idx])
                     name, score = result['name'][face_idx][0]
                     if score < DeepFaceConfs.get()['recognizer']['score_th']:
                         continue
@@ -127,6 +128,7 @@ class DeepFace:
 
         features = {}
         for name, path in tqdm(name_paths):
+            logger.debug("finding faces for %s:" % path)
             faces = self.run(image=path)
             features[name] = faces[0].face_feature
 
