@@ -2,6 +2,8 @@ import logging
 import os
 import pickle
 import sys
+from glob import glob
+
 import cv2
 import numpy as np
 
@@ -46,11 +48,12 @@ class DeepFace:
             self.recognizer = FaceRecognizerVGG()
 
     def blackpink(self, visualize=True):
-        imgs = ['./samples/blackpink/blackpink%d.jpg' % (i+1) for i in range(7)]
+        imgs = ['./samples/blackpink/blackpink%d.jpg' % (i + 1) for i in range(7)]
         for img in imgs:
             self.run(image=img, visualize=visualize)
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg', visualize=False):
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
+            visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
 
@@ -118,6 +121,19 @@ class DeepFace:
         with open('db.pkl', 'wb') as f:
             pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
 
+    def save_features_path(self, path):
+        name_paths = [(os.path.basename(img_path)[:-4], img_path)
+                      for img_path in glob(os.path.join(path, "*.jpg"))]
+
+        features = {}
+        for name, path in tqdm(name_paths):
+            faces = self.run(image=path)
+            features[name] = faces[0].face_feature
+
+        import pickle
+        with open('db.pkl', 'wb') as f:
+            pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
+
     def test_lfw(self, set='test', model='baseline', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
@@ -139,7 +155,7 @@ class DeepFace:
                 logger.warning('line should have 3 or 4 elements, line=%s' % line)
 
         logger.info('pair length=%d' % len(pairs))
-        test_result = []    # score, label(1=same)
+        test_result = []  # score, label(1=same)
         for name1, idx1, name2, idx2 in tqdm(pairs):
             img1_path = os.path.join(lfw_path, name1, '%s_%04d.jpg' % (name1, idx1))
             img2_path = os.path.join(lfw_path, name2, '%s_%04d.jpg' % (name2, idx2))
@@ -211,7 +227,7 @@ class DeepFace:
             fig = plt.figure()
             a = fig.add_subplot(1, 2, 1)
             plt.title('Experiment on LFW')
-            plt.plot(fpr, tpr, label='%s(%.4f)' % (model, 1-eer))    # TODO : label
+            plt.plot(fpr, tpr, label='%s(%.4f)' % (model, 1 - eer))  # TODO : label
 
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.05])

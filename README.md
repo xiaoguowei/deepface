@@ -27,7 +27,22 @@ A baseline model use dlib face detection module to crop rois. Then they will be 
 |                                       |            |            |
 | VGG(no embedding, no training on lfw) | Test       | 0.9400     |
 
+## Install
+```bash
+$ pip install -r requirements.txt
+$ cd detectors/dlib
+$ bash download.sh
+$ cd ../../recognizers/vggface/
+$ bash download.sh
+```
+
 ## Run
+
+### Make a DB
+
+```bash
+$ python3 deepface.py save_features_path --path=YOUR_OWN_PATH
+```
 
 ### Test on a image
 
