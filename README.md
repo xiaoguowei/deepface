@@ -38,10 +38,10 @@ $ bash download.sh
 
 ## Run
 
-### Make a DB
+### Test on samples
 
 ```bash
-$ python3 deepface.py save_features_path --path=YOUR_OWN_PATH
+$ python3 deepface.py save_and_run --path=./samples/faces --image=./samples/blackpink/blackpink1.jpg
 ```
 
 ### Test on a image

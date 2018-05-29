@@ -105,24 +105,22 @@ class DeepFace:
 
         return faces
 
-    def save_features(self):
-        # TODO : implemented
-        name_paths = [
-            ('jisoo', './samples/blackpink/blackpink_js1.jpg'),
-            ('jennie', './samples/blackpink/blackpink_jn1.jpg'),
-            ('lisa', './samples/blackpink/blackpink_lisa1.jpg'),
-            ('rose', './samples/blackpink/blackpink_rose1.jpg'),
-        ]
-        features = {}
-        for name, path in name_paths:
-            faces = self.run(image=path)
-            features[name] = faces[0].face_feature
-
-        import pickle
-        with open('db.pkl', 'wb') as f:
-            pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
+    def save_and_run(self, path, image, visualize=True):
+        """
+        :param visualize:
+        :param path: samples/faces
+        :param image_path: samples/blackpink1.jpg
+        :return:
+        """
+        self.save_features_path(path)
+        self.run(image=image, visualize=visualize)
 
     def save_features_path(self, path):
+        """
+
+        :param path: folder contain images("./samples/faces/")
+        :return:
+        """
         name_paths = [(os.path.basename(img_path)[:-4], img_path)
                       for img_path in glob(os.path.join(path, "*.jpg"))]
 
@@ -133,7 +131,7 @@ class DeepFace:
             features[name] = faces[0].face_feature
 
         import pickle
-        with open('db.pkl', 'wb') as f:
+        with open(os.path.join("recognizers/vggface", DeepFaceConfs.get()['recognizer']['vgg']['db']), 'wb') as f:
             pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
 
     def test_lfw(self, set='test', model='baseline', visualize=True):
