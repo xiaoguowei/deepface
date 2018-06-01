@@ -15,7 +15,7 @@ class FaceDetectorDlib(FaceDetector):
     NAME = 'detector_dlib'
 
     def __init__(self):
-        super().__init__()
+        super(FaceDetectorDlib, self).__init__()
         self.detector = dlib.get_frontal_face_detector()
         predictor_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),

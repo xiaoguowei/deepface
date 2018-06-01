@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 import math
 
 import cv2
 import numpy as np
-from itertools import zip_longest
+try:
+    from itertools import zip_longest
+except:
+    from itertools import izip_longest as zip_longest
 
 from confs.conf import DeepFaceConfs
 

@@ -12,7 +12,7 @@ recognizer:
   topk: 5
   score_th: 0.77
   vgg:
-    db: db_blackpink.pkl
+    db: #db_blackpink.pkl
     batch: 4
 
 dataset:
