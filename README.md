@@ -42,6 +42,8 @@ $ cd detectors/dlib
 $ bash download.sh
 $ cd ../../recognizers/vggface/
 $ bash download.sh
+$ cd ../resnet/
+$ bash download.sh
 ```
 
 ## Run
