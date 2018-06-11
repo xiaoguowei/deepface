@@ -113,6 +113,7 @@ class FaceRecognizerResnet(FaceRecognizer):
         # Final stage:
         l = tf.layers.average_pooling2d(l, 7, 1)
         l = tf.layers.flatten(l)
+        network['feat'] = l
         output = tf.layers.dense(l, 8631, activation=tf.nn.softmax, name='classifier')  # 8631 classes
         network['out'] = output
 
@@ -191,22 +192,40 @@ class FaceRecognizerResnet(FaceRecognizer):
         for roi in rois:
             if roi.shape[0] != 224 or roi.shape[1] != 224:
                 new_roi = cv2.resize(roi, (224, 224), interpolation=cv2.INTER_AREA)
-                # new_roi = cv2.cvtColor(new_roi, cv2.COLOR_BGR2RGB)
                 new_rois.append(new_roi)
             else:
-                # roi = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
                 new_rois.append(roi)
 
         probs = []
         feats = []
-        results = []
+        names = []
         for roi_chunk in grouper(new_rois, self.batch_size,
                                  fillvalue=np.zeros((self.batch_size, 224, 224, 3), dtype=np.uint8)):
-            results = self.persistent_sess.run([self.network['out']],
-                                               feed_dict={self.input_node: roi_chunk})
+            prob, feat = self.persistent_sess.run([self.network['out'], self.network['feat']],
+                                                  feed_dict={self.input_node: roi_chunk})
+            feat = [np.squeeze(x) for x in feat]
+            probs.append(prob)
+            feats.append(feat)
+            names.append('test')
+        probs = np.vstack(probs)[:len(rois)]
+        feats = np.vstack(feats)[:len(rois)]
+
+        # if self.db is None:
+        #     names = [[(self.class_names[idx], prop[idx]) for idx in
+        #               prop.argsort()[-DeepFaceConfs.get()['recognizer']['topk']:][::-1]] for prop in probs]
+        # else:
+        #     # TODO
+        #     names = []
+        #     for feat in feats:
+        #         scores = []
+        #         for db_name, db_feature in self.db.items():
+        #             similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
+        #             scores.append((db_name, similarity))
+        #         scores.sort(key=lambda x: x[1], reverse=True)
+        #         names.append(scores)
 
         return {
             'output': probs,
             'feature': feats,
-            'name': ['test1', 'test2', 'test3', 'test4']
+            'name': names
         }

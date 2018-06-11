@@ -78,7 +78,7 @@ class DeepFace:
             logger.debug('run face recognition-')
         return
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/ak.jpg',
             visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
@@ -160,7 +160,7 @@ class DeepFace:
         with open(os.path.join("recognizers/vggface", DeepFaceConfs.get()['recognizer']['vgg']['db']), 'wb') as f:
             pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
 
-    def test_lfw(self, set='test', model='baseline', visualize=True):
+    def test_lfw(self, set='test', model='baseline_resnet', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
         else:
