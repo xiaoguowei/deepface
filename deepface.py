@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from confs.conf import DeepFaceConfs
 from detectors.detector_dlib import FaceDetectorDlib
+from recognizers.recognizer_resnet import FaceRecognizerResnet
 from recognizers.recognizer_vgg import FaceRecognizerVGG
 from utils.common import get_roi
 from utils.visualization import draw_bboxs
@@ -46,11 +47,36 @@ class DeepFace:
         logger.debug('set_recognizer old=%s new=%s' % (self.recognizer, recognizer))
         if recognizer == FaceRecognizerVGG.NAME:
             self.recognizer = FaceRecognizerVGG()
+        elif recognizer == FaceRecognizerResnet.NAME:
+            self.recognizer = FaceRecognizerResnet()
 
     def blackpink(self, visualize=True):
         imgs = ['./samples/blackpink/blackpink%d.jpg' % (i + 1) for i in range(7)]
         for img in imgs:
             self.run(image=img, visualize=visualize)
+
+    def recognizer_test_run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/ajb.jpg', visualize=False):
+        self.set_detector(detector)
+        self.set_recognizer(recognizer)
+
+        if isinstance(image, str):
+            logger.debug('read image, path=%s' % image)
+            npimg = cv2.imread(image, cv2.IMREAD_COLOR)
+        elif isinstance(image, np.ndarray):
+            npimg = image
+        else:
+            logger.error('Argument image should be str or ndarray. image=%s' % str(image))
+            sys.exit(-1)
+
+        if npimg is None:
+            logger.error('image can not be read, path=%s' % image)
+            sys.exit(-1)
+
+        if recognizer:
+            logger.debug('run face recognition+')
+            result = self.recognizer.detect([npimg[...,::-1]])
+            logger.debug('run face recognition-')
+        return
 
     def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
             visualize=False):
