@@ -8,9 +8,10 @@ import tensorflow as tf
 from scipy.io import loadmat
 import pickle
 
-from confs.conf import DeepFaceConfs
-from recognizers.recognizer_base import FaceRecognizer
-from utils.common import grouper, rotate_dot
+from deepface.confs.conf import DeepFaceConfs
+from deepface.utils.common import grouper, rotate_dot
+
+from .recognizer_base import FaceRecognizer
 
 
 class FaceRecognizerVGG(FaceRecognizer):
@@ -62,7 +63,8 @@ class FaceRecognizerVGG(FaceRecognizer):
             elif layer_type == 'pool':
                 stride = layer[0]['stride'][0][0]
                 pool = layer[0]['pool'][0][0]
-                current = tf.nn.max_pool(current, ksize=(1, pool[0], pool[1], 1), strides=(1, stride[0], stride[0], 1), padding='SAME')
+                current = tf.nn.max_pool(current, ksize=(1, pool[0], pool[1], 1), strides=(1, stride[0], stride[0], 1),
+                                         padding='SAME')
             elif layer_type == 'softmax':
                 current = tf.nn.softmax(tf.reshape(current, [-1, len(self.class_names)]))
 
@@ -99,7 +101,8 @@ class FaceRecognizerVGG(FaceRecognizer):
 
         probs = []
         feats = []
-        for roi_chunk in grouper(new_rois, self.batch_size, fillvalue=np.zeros((self.input_hw[0], self.input_hw[1], 3), dtype=np.uint8)):
+        for roi_chunk in grouper(new_rois, self.batch_size,
+                                 fillvalue=np.zeros((self.input_hw[0], self.input_hw[1], 3), dtype=np.uint8)):
             prob, feat = self.persistent_sess.run([self.network['prob'], self.network['fc7']], feed_dict={
                 self.input_node: roi_chunk
             })
@@ -110,7 +113,8 @@ class FaceRecognizerVGG(FaceRecognizer):
         feats = np.vstack(feats)[:len(rois)]
 
         if self.db is None:
-            names = [[(self.class_names[idx], prop[idx]) for idx in prop.argsort()[-DeepFaceConfs.get()['recognizer']['topk']:][::-1]] for prop in probs]
+            names = [[(self.class_names[idx], prop[idx]) for idx in
+                      prop.argsort()[-DeepFaceConfs.get()['recognizer']['topk']:][::-1]] for prop in probs]
         else:
             # TODO
             names = []

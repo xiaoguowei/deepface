@@ -1,7 +1,6 @@
 import cv2
 
-from utils.colors import get_random_color
-
+from .colors import get_random_color
 
 def draw_bbox(npimg, bbox, color=(0, 255, 0)):
     cv2.rectangle(npimg, (bbox.x, bbox.y), (bbox.x + bbox.w, bbox.y + bbox.h), color, 2)

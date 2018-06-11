@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import logging
 import os
 import pickle
@@ -12,11 +14,13 @@ from sklearn.metrics import roc_curve
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from confs.conf import DeepFaceConfs
-from detectors.detector_dlib import FaceDetectorDlib
-from recognizers.recognizer_vgg import FaceRecognizerVGG
-from utils.common import get_roi
-from utils.visualization import draw_bboxs
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(base_dir)
+from deepface.confs.conf import DeepFaceConfs
+from deepface.detectors.detector_dlib import FaceDetectorDlib
+from deepface.recognizers.recognizer_vgg import FaceRecognizerVGG
+from deepface.utils.common import get_roi
+from deepface.utils.visualization import draw_bboxs
 
 logger = logging.getLogger('DeepFace')
 logger.setLevel(logging.INFO if int(os.environ.get('DEBUG', 0)) == 0 else logging.DEBUG)

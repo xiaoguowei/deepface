@@ -1,5 +1,11 @@
-from confs.conf import DeepFaceConfs
-from deepface import DeepFace
+import os
+import sys
+
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(base_dir)
+
+from deepface.confs.conf import DeepFaceConfs
+from face import DeepFace
 from hyperopt import STATUS_OK
 
 

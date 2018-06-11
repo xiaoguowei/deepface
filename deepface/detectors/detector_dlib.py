@@ -3,9 +3,10 @@ import os
 import dlib
 import numpy as np
 
-from confs.conf import DeepFaceConfs
-from detectors.detector_base import FaceDetector
-from utils.bbox import BoundingBox
+from deepface.confs.conf import DeepFaceConfs
+from deepface.utils.bbox import BoundingBox
+
+from .detector_base import FaceDetector
 
 
 class FaceDetectorDlib(FaceDetector):
