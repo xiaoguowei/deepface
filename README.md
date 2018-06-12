@@ -24,12 +24,13 @@ A baseline model use dlib face detection module to crop rois. Then they will be 
 
 ### LFW Dataset
 
-| Model                                 | Set        | 1-EER      |
-|---------------------------------------|------------|------------|
-| VGG(Paper, No Embedding, Trained)     | Test       | 0.9673     |
-| VGG(Paper, Embedding, Trained)        | Test       | 0.9913     |
-|                                       |            |            |
-| VGG(no embedding, no training on lfw) | Test       | 0.9400     |
+| Model                                 | Set        | 1-EER      | Accuracy |
+|---------------------------------------|------------|------------|----------|
+| VGG(Paper, No Embedding, Trained)     | Test       | 0.9673     |          |
+| VGG(Paper, Embedding, Trained)        | Test       | 0.9913     |          |
+|                                       |            |            |          |
+| VGG(no embedding, no training on lfw) | Test       | 0.9400     | 0.936    |
+| VGG2-Resnet(no training on lfw)       | Test       | 0.9680     | 0.949    |
 
 ## Install
 
@@ -75,6 +76,10 @@ $ python3 deepface.py run --visualize=true --image=./samples/blackpink/blackpink
 [3] DLib : https://github.com/davisking/dlib
 
 [4] Dlib Guide Blog : https://www.pyimagesearch.com/2017/04/03/facial-landmarks-dlib-opencv-python/
+
+[5] VGG Face 2 Project : https://www.robots.ox.ac.uk/~vgg/data/vgg_face2/
+
+[6] Kera VGG Face2 : https://github.com/rcmalli/keras-vggface
 
 ### Datasets
 
