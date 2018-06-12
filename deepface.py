@@ -16,7 +16,7 @@ from confs.conf import DeepFaceConfs
 from detectors.detector_dlib import FaceDetectorDlib
 from recognizers.recognizer_resnet import FaceRecognizerResnet
 from recognizers.recognizer_vgg import FaceRecognizerVGG
-from utils.common import get_roi
+from utils.common import get_roi, feat_distance_l2, feat_distance_cosine
 from utils.visualization import draw_bboxs
 
 logger = logging.getLogger('DeepFace')
@@ -207,7 +207,7 @@ class DeepFace:
 
             feat1 = result1[0].face_feature
             feat2 = result2[0].face_feature
-            similarity = np.dot(feat1 / np.linalg.norm(feat1, 2), feat2 / np.linalg.norm(feat2, 2))
+            similarity = feat_distance_cosine(feat1, feat2)
             test_result.append((similarity, name1 == name2))
 
         # calculate accuracy

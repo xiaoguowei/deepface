@@ -10,7 +10,7 @@ import pickle
 
 from confs.conf import DeepFaceConfs
 from recognizers.recognizer_base import FaceRecognizer
-from utils.common import grouper, rotate_dot
+from utils.common import grouper, rotate_dot, feat_distance_cosine
 
 
 class FaceRecognizerVGG(FaceRecognizer):
@@ -117,7 +117,7 @@ class FaceRecognizerVGG(FaceRecognizer):
             for feat in feats:
                 scores = []
                 for db_name, db_feature in self.db.items():
-                    similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
+                    similarity = feat_distance_cosine(feat, db_feature)
                     scores.append((db_name, similarity))
                 scores.sort(key=lambda x: x[1], reverse=True)
                 names.append(scores)
