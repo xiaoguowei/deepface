@@ -14,6 +14,9 @@ recognizer:
   vgg:
     db: #db_blackpink.pkl
     batch: 4
+  resnet:
+    db: db_blackpink.pkl
+    batch: 4
 
 dataset:
   lfw: /data/public/rw/datasets/faces/lfw

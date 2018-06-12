@@ -65,18 +65,19 @@ class FaceRecognizerResnet(FaceRecognizer):
     NAME = 'recognizer_resnet'
 
     def __init__(self):
-        self.batch_size = 1
+        self.batch_size = 4
+
+        # Load labels:
         dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resnet')
-        filename = 'weight.h5'
+        filename = 'labels.npy'
         filepath = os.path.join(dir_path, filename)
 
         if not os.path.exists(filepath):
-            raise FileNotFoundError('Weight file not found, path=%s' % filepath)
+            raise FileNotFoundError('Label file not found, path=%s' % filepath)
 
+        self.class_names = np.load(filepath)
         self.input_node = tf.placeholder(tf.float32, shape=(None, 224, 224, 3), name='image')
         current = self.input_node
-
-        # save for detect:
         network = {}
 
         # Building the cnn architecture:
@@ -116,6 +117,14 @@ class FaceRecognizerResnet(FaceRecognizer):
         network['feat'] = l
         output = tf.layers.dense(l, 8631, activation=tf.nn.softmax, name='classifier')  # 8631 classes
         network['out'] = output
+
+        # Load weights:
+        dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resnet')
+        filename = 'weight.h5'
+        filepath = os.path.join(dir_path, filename)
+
+        if not os.path.exists(filepath):
+            raise FileNotFoundError('Weight file not found, path=%s' % filepath)
 
         # Assign weights:
         assign_list = []
@@ -177,9 +186,8 @@ class FaceRecognizerResnet(FaceRecognizer):
         })
 
         self.network = network
-
         self.db = None
-        db_path = DeepFaceConfs.get()['recognizer']['vgg'].get('db', '')
+        db_path = DeepFaceConfs.get()['recognizer']['resnet'].get('db', '')
         if db_path:
             with open(os.path.join(dir_path, db_path), 'rb') as f:
                 self.db = pickle.load(f)
@@ -206,23 +214,22 @@ class FaceRecognizerResnet(FaceRecognizer):
             feat = [np.squeeze(x) for x in feat]
             probs.append(prob)
             feats.append(feat)
-            names.append('test')
         probs = np.vstack(probs)[:len(rois)]
         feats = np.vstack(feats)[:len(rois)]
 
-        # if self.db is None:
-        #     names = [[(self.class_names[idx], prop[idx]) for idx in
-        #               prop.argsort()[-DeepFaceConfs.get()['recognizer']['topk']:][::-1]] for prop in probs]
-        # else:
-        #     # TODO
-        #     names = []
-        #     for feat in feats:
-        #         scores = []
-        #         for db_name, db_feature in self.db.items():
-        #             similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
-        #             scores.append((db_name, similarity))
-        #         scores.sort(key=lambda x: x[1], reverse=True)
-        #         names.append(scores)
+        if self.db is None:
+            names = [[(str(self.class_names[idx].encode('utf8')), prop[idx]) for idx in
+                      prop.argsort()[-5:][::-1]] for prop in probs]
+        else:
+            names = []
+            for feat in feats:
+                scores = []
+                for db_name, db_feature in self.db.items():
+                    similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
+                    scores.append((db_name, similarity))
+                    print(db_name + ' :: '+ str(similarity))
+                scores.sort(key=lambda x: x[1], reverse=True)
+                names.append(scores)
 
         return {
             'output': probs,

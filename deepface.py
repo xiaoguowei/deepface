@@ -157,7 +157,7 @@ class DeepFace:
             features[name] = faces[0].face_feature
 
         import pickle
-        with open(os.path.join("recognizers/vggface", DeepFaceConfs.get()['recognizer']['vgg']['db']), 'wb') as f:
+        with open(os.path.join("recognizers/resnet", DeepFaceConfs.get()['recognizer']['resnet']['db']), 'wb') as f:
             pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
 
     def test_lfw(self, set='test', model='baseline_resnet', visualize=True):
