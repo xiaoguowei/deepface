@@ -10,7 +10,7 @@ roi:
 
 recognizer:
   topk: 5
-  score_th: 0.77
+  score_th: 0.93
   vgg:
     db: db_blackpink.pkl
     batch: 4

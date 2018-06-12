@@ -171,3 +171,15 @@ def rotationMatrixToEulerAngles(R):
         z = 0
 
     return np.array([x, y, z])
+
+
+def feat_distance_cosine(feat1, feat2):
+    similarity = np.dot(feat1 / np.linalg.norm(feat1, 2), feat2 / np.linalg.norm(feat2, 2))
+    return similarity
+
+
+def feat_distance_l2(feat1, feat2):
+    feat1_norm = feat1 / np.linalg.norm(feat1, 2)
+    feat2_norm = feat2 / np.linalg.norm(feat2, 2)
+    similarity = 1.0 - np.linalg.norm(feat1_norm - feat2_norm, 2) / 2.0
+    return similarity
