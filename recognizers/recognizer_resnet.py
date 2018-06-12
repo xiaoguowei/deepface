@@ -32,7 +32,7 @@ def conv_block(input_tensor, filters, stage, block, strides=(2, 2), bias=False):
     return l
 
 
-def identity_block(input_tensor, filters, stage, block, bias=False):
+def identity_block(input_tensor, filters, stage, block, bias=False, last_relu=True):
     layer_name = 'conv' + str(stage) + '_' + str(block)
     l = tf.layers.conv2d(input_tensor, filters[0], 1, use_bias=bias, name=layer_name + '_1x1_reduce')
     l = tf.layers.batch_normalization(l, axis=3, name=layer_name + '_1x1_reduce/bn')
@@ -46,7 +46,8 @@ def identity_block(input_tensor, filters, stage, block, bias=False):
     l = tf.layers.batch_normalization(l, name=layer_name + '_1x1_increase/bn')
 
     l = tf.add(l, input_tensor)
-    l = tf.nn.relu(l)
+    if last_relu:
+        l = tf.nn.relu(l)
     return l
 
 
@@ -107,12 +108,13 @@ class FaceRecognizerResnet(FaceRecognizer):
         # Fifth block:
         l = conv_block(l, [512, 512, 2048], stage=5, block=1)
         l = identity_block(l, [512, 512, 2048], stage=5, block=2)
-        l = identity_block(l, [512, 512, 2048], stage=5, block=3)
+        l = identity_block(l, [512, 512, 2048], stage=5, block=3, last_relu=False)
 
         # Final stage:
         l = tf.layers.average_pooling2d(l, 7, 1)
         l = tf.layers.flatten(l)
         network['feat'] = l
+        l = tf.nn.relu(l)
         output = tf.layers.dense(l, 8631, activation=tf.nn.softmax, name='classifier')  # 8631 classes
         network['out'] = output
 
@@ -207,7 +209,7 @@ class FaceRecognizerResnet(FaceRecognizer):
         feats = []
         names = []
         for roi_chunk in grouper(new_rois, self.batch_size,
-                                 fillvalue=np.zeros((self.batch_size, 224, 224, 3), dtype=np.uint8)):
+                                 fillvalue=np.zeros((224, 224, 3), dtype=np.uint8)):
             prob, feat = self.persistent_sess.run([self.network['out'], self.network['feat']],
                                                   feed_dict={self.input_node: roi_chunk})
             feat = [np.squeeze(x) for x in feat]
@@ -226,7 +228,6 @@ class FaceRecognizerResnet(FaceRecognizer):
                 for db_name, db_feature in self.db.items():
                     similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
                     scores.append((db_name, similarity))
-                    print(db_name + ' :: '+ str(similarity))
                 scores.sort(key=lambda x: x[1], reverse=True)
                 names.append(scores)
 
@@ -235,3 +236,6 @@ class FaceRecognizerResnet(FaceRecognizer):
             'feature': feats,
             'name': names
         }
+
+    def get_threshold(self):
+        return DeepFaceConfs.get()['recognizer']['resnet']['score_th']

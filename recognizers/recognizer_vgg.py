@@ -127,3 +127,6 @@ class FaceRecognizerVGG(FaceRecognizer):
             'feature': feats,
             'name': names
         }
+
+    def get_threshold(self):
+        return DeepFaceConfs.get()['recognizer']['vgg']['score_th']

@@ -8,4 +8,4 @@ extract_download_url() {
 }
 
 wget $( extract_download_url http://www.mediafire.com/file/datqeencsrqua22/rcmalli_vggface_tf_resnet50.h5 ) -O weight.h5
-wget https://github.com/rcmalli/keras-vggface/releases/download/v2.0/rcmalli_vggface_labels_v2.npy -O labels.npy
+wget $( extract_download_url http://www.mediafire.com/file/sc2fo5xcktwbqkd/rcmalli_vggface_labels_v2.npy ) -O labels.npy

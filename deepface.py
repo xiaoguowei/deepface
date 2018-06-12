@@ -118,7 +118,7 @@ class DeepFace:
                     face.face_feature = result['feature'][face_idx]
                     logger.debug('candidates: %s' % str(result['name'][face_idx]))
                     name, score = result['name'][face_idx][0]
-                    if score < DeepFaceConfs.get()['recognizer']['score_th']:
+                    if score < self.recognizer.get_threshold():
                         continue
                     face.face_name = name
                     face.face_score = score
@@ -157,8 +157,8 @@ class DeepFace:
             features[name] = faces[0].face_feature
 
         import pickle
-        with open(os.path.join("recognizers/resnet", DeepFaceConfs.get()['recognizer']['resnet']['db']), 'wb') as f:
-            pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
+        with open('db.pkl', 'wb') as f:
+            pickle.dump(features, f, protocol=2)
 
     def test_lfw(self, set='test', model='baseline_resnet', visualize=True):
         if set is 'train':

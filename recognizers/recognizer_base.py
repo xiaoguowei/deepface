@@ -12,3 +12,7 @@ class FaceRecognizer(object):
     @abc.abstractmethod
     def detect(self, rois):
         pass
+
+    @abc.abstractmethod
+    def get_threshold(self):
+        pass
