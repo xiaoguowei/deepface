@@ -78,8 +78,8 @@ class DeepFace:
             logger.debug('run face recognition-')
         return
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/ajb.jpg',
-            visualize=False):
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/face-recog/samples/kakaobrain.jpg',
+            visualize=True):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
 
@@ -104,7 +104,7 @@ class DeepFace:
             rois = []
             for face in faces:
                 # roi = npimg[face.y:face.y+face.h, face.x:face.x+face.w, :]
-                roi = get_roi(npimg, face)
+                roi = get_roi(npimg, face, roi_mode=recognizer)
                 if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
                     cv2.imshow('roi', roi)
                     cv2.waitKey(0)
@@ -193,8 +193,8 @@ class DeepFace:
             if img2 is None:
                 logger.warning('image not read, path=%s' % img2_path)
 
-            result1 = self.run(image=img1)
-            result2 = self.run(image=img2)
+            result1 = self.run(image=img1, visualize=False)
+            result2 = self.run(image=img2, visualize=False)
 
             if len(result1) == 0:
                 logger.warning('face not detected, name=%s(%d)! %s(%d)' % (name1, idx1, name2, idx2))
@@ -207,11 +207,11 @@ class DeepFace:
 
             feat1 = result1[0].face_feature
             feat2 = result2[0].face_feature
-            similarity = feat_distance_cosine(feat1, feat2)
+            similarity = feat_distance_l2(feat1, feat2)
             test_result.append((similarity, name1 == name2))
 
-        # calculate accuracy
-        accuracy = sum([label == (score > 0.78) for score, label in test_result]) / float(len(test_result))
+        # calculate accuracy TODO
+        accuracy = sum([label == (score > DeepFaceConfs.get()['recognizer']['resnet']['score_th']) for score, label in test_result]) / float(len(test_result))
         logger.info('accuracy=%.8f' % accuracy)
 
         # ROC Curve, AUC
@@ -270,9 +270,9 @@ class DeepFace:
             a.legend()
             a.set_title('%s : TP, TN' % model)
 
+            fig.savefig('./etc/roc.png', dpi=300)
             plt.show()
             plt.draw()
-            fig.savefig('./etc/roc.png', dpi=300)
 
         with open('./etc/test_lfw.pkl', 'rb') as f:
             results = pickle.load(f)

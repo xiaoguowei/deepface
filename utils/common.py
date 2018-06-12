@@ -28,7 +28,7 @@ def roundint(v):
     return int(round(v))
 
 
-def get_roi(img, face):
+def get_roi(img, face, roi_mode):
     """
     :return: target_size 크기의 Cropped & Aligned Face Image
     """
@@ -62,9 +62,9 @@ def get_roi(img, face):
 
         aligned_w = max_x - min_x
         aligned_h = max_y - min_y
-        crop_y_ratio = float(DeepFaceConfs.get()['roi']['crop_y_ratio'])
+        crop_y_ratio = float(DeepFaceConfs.get()['roi'][roi_mode]['crop_y_ratio'])
         center_point = ((min_x + max_x) / 2, min_y * crop_y_ratio + max_y * (1.0 - crop_y_ratio))
-        image_size = int(max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi']['size_ratio'])   # TODO : Parameter tuning?
+        image_size = int(max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi'][roi_mode]['size_ratio'])   # TODO : Parameter tuning?
     else:
         min_x, min_y = rotate_dot((face.x, face.y), mat)
         max_x, max_y = rotate_dot((face.x + face.w, face.y + face.h), mat)
@@ -72,7 +72,7 @@ def get_roi(img, face):
         aligned_w = max_x - min_x
         aligned_h = max_y - min_y
         center_point = ((min_x + max_x) / 2, (min_y + max_y) / 2)
-        image_size = int(max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi']['size_ratio'])
+        image_size = int(max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi'][roi_mode]['size_ratio'])
 
     crop_x1 = roundint(center_point[0] - image_size / 2)
     crop_y1 = roundint(center_point[1] - image_size / 2)
