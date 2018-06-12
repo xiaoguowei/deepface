@@ -180,6 +180,13 @@ class DeepFace:
             else:
                 logger.warning('line should have 3 or 4 elements, line=%s' % line)
 
+        if model == 'baseline':
+            recog = FaceRecognizerVGG.NAME
+        elif model == 'baseline_resnet':
+            recog = FaceRecognizerResnet.NAME
+        else:
+            raise Exception('invalid model name=%s' % model)
+
         logger.info('pair length=%d' % len(pairs))
         test_result = []  # score, label(1=same)
         for name1, idx1, name2, idx2 in tqdm(pairs):
@@ -193,8 +200,8 @@ class DeepFace:
             if img2 is None:
                 logger.warning('image not read, path=%s' % img2_path)
 
-            result1 = self.run(image=img1, visualize=False)
-            result2 = self.run(image=img2, visualize=False)
+            result1 = self.run(image=img1, recognizer=recog, visualize=False)
+            result2 = self.run(image=img2, recognizer=recog, visualize=False)ß
 
             if len(result1) == 0:
                 logger.warning('face not detected, name=%s(%d)! %s(%d)' % (name1, idx1, name2, idx2))
@@ -249,11 +256,20 @@ class DeepFace:
         eer = fnr[np.nanargmin(np.absolute((fnr - fpr)))]
         logger.info('1-eer=%.4f' % (1.0 - eer))
 
+        with open('./etc/test_lfw.pkl', 'rb') as f:
+            results = pickle.load(f)
+
         if visualize in [True, 'True', 'true', 1, '1']:
             fig = plt.figure()
             a = fig.add_subplot(1, 2, 1)
             plt.title('Experiment on LFW')
             plt.plot(fpr, tpr, label='%s(%.4f)' % (model, 1 - eer))  # TODO : label
+
+            for model_name in results:
+                fpr_prev = results[model_name]['fpr']
+                tpr_prev = results[model_name]['tpr']
+                eer_prev = results[model_name]['eer']
+                plt.plot(fpr_prev, tpr_prev, label='%s(%.4f)' % (model_name, 1 - eer_prev))
 
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.05])
@@ -273,9 +289,6 @@ class DeepFace:
             fig.savefig('./etc/roc.png', dpi=300)
             plt.show()
             plt.draw()
-
-        with open('./etc/test_lfw.pkl', 'rb') as f:
-            results = pickle.load(f)
 
         with open('./etc/test_lfw.pkl', 'wb') as f:
             results[model] = {

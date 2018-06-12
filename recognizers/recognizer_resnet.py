@@ -207,7 +207,6 @@ class FaceRecognizerResnet(FaceRecognizer):
 
         probs = []
         feats = []
-        names = []
         for roi_chunk in grouper(new_rois, self.batch_size,
                                  fillvalue=np.zeros((224, 224, 3), dtype=np.uint8)):
             prob, feat = self.persistent_sess.run([self.network['out'], self.network['feat']],
