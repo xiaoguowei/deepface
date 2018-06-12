@@ -66,7 +66,7 @@ class FaceRecognizerResnet(FaceRecognizer):
 
     def __init__(self):
         self.batch_size = 1
-        dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resnet')
+        dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'vggface2_resnet')
         filename = 'weight.h5'
         filepath = os.path.join(dir_path, filename)
 
@@ -124,6 +124,8 @@ class FaceRecognizerResnet(FaceRecognizer):
             for layer in layers:
                 g = f[layer]
 
+                if isinstance(layer, bytes):
+                    layer = layer.decode('utf-8')
                 layer_type = get_layer_type(layer)
                 if layer_type == 'Conv2D':
                     with tf.variable_scope('', reuse=True):
