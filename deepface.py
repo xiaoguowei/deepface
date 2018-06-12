@@ -2,6 +2,8 @@ import logging
 import os
 import pickle
 import sys
+from glob import glob
+
 import cv2
 import numpy as np
 
@@ -46,11 +48,12 @@ class DeepFace:
             self.recognizer = FaceRecognizerVGG()
 
     def blackpink(self, visualize=True):
-        imgs = ['./samples/blackpink/blackpink%d.jpg' % (i+1) for i in range(7)]
+        imgs = ['./samples/blackpink/blackpink%d.jpg' % (i + 1) for i in range(7)]
         for img in imgs:
             self.run(image=img, visualize=visualize)
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg', visualize=False):
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
+            visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
 
@@ -87,6 +90,7 @@ class DeepFace:
                 logger.debug('run face recognition-')
                 for face_idx, face in enumerate(faces):
                     face.face_feature = result['feature'][face_idx]
+                    logger.debug('candidates: %s' % result['name'][face_idx])
                     name, score = result['name'][face_idx][0]
                     if score < DeepFaceConfs.get()['recognizer']['score_th']:
                         continue
@@ -101,21 +105,33 @@ class DeepFace:
 
         return faces
 
-    def save_features(self):
-        # TODO : implemented
-        name_paths = [
-            ('jisoo', './samples/blackpink/blackpink_js1.jpg'),
-            ('jennie', './samples/blackpink/blackpink_jn1.jpg'),
-            ('lisa', './samples/blackpink/blackpink_lisa1.jpg'),
-            ('rose', './samples/blackpink/blackpink_rose1.jpg'),
-        ]
+    def save_and_run(self, path, image, visualize=True):
+        """
+        :param visualize:
+        :param path: samples/faces
+        :param image_path: samples/blackpink1.jpg
+        :return:
+        """
+        self.save_features_path(path)
+        self.run(image=image, visualize=visualize)
+
+    def save_features_path(self, path):
+        """
+
+        :param path: folder contain images("./samples/faces/")
+        :return:
+        """
+        name_paths = [(os.path.basename(img_path)[:-4], img_path)
+                      for img_path in glob(os.path.join(path, "*.jpg"))]
+
         features = {}
-        for name, path in name_paths:
+        for name, path in tqdm(name_paths):
+            logger.debug("finding faces for %s:" % path)
             faces = self.run(image=path)
             features[name] = faces[0].face_feature
 
         import pickle
-        with open('db.pkl', 'wb') as f:
+        with open(os.path.join("recognizers/vggface", DeepFaceConfs.get()['recognizer']['vgg']['db']), 'wb') as f:
             pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
 
     def test_lfw(self, set='test', model='baseline', visualize=True):
@@ -139,7 +155,7 @@ class DeepFace:
                 logger.warning('line should have 3 or 4 elements, line=%s' % line)
 
         logger.info('pair length=%d' % len(pairs))
-        test_result = []    # score, label(1=same)
+        test_result = []  # score, label(1=same)
         for name1, idx1, name2, idx2 in tqdm(pairs):
             img1_path = os.path.join(lfw_path, name1, '%s_%04d.jpg' % (name1, idx1))
             img2_path = os.path.join(lfw_path, name2, '%s_%04d.jpg' % (name2, idx2))
@@ -211,7 +227,7 @@ class DeepFace:
             fig = plt.figure()
             a = fig.add_subplot(1, 2, 1)
             plt.title('Experiment on LFW')
-            plt.plot(fpr, tpr, label='%s(%.4f)' % (model, 1-eer))    # TODO : label
+            plt.plot(fpr, tpr, label='%s(%.4f)' % (model, 1 - eer))  # TODO : label
 
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.05])

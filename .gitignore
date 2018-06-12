@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+*.dat
+*.bz2
+result.jpg

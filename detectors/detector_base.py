@@ -1,7 +1,7 @@
 import abc
 
 
-class FaceDetector:
+class FaceDetector(object):
     def __init__(self):
         pass
 
