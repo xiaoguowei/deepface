@@ -78,7 +78,7 @@ class DeepFace:
             logger.debug('run face recognition-')
         return
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/ak.jpg',
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/ajb.jpg',
             visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
@@ -141,7 +141,7 @@ class DeepFace:
         self.save_features_path(path)
         self.run(image=image, visualize=visualize)
 
-    def save_features_path(self, path):
+    def save_features_path(self, path="./samples/blackpink/faces/"):
         """
 
         :param path: folder contain images("./samples/faces/")
