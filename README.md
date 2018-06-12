@@ -6,6 +6,10 @@ Deep Learning Models for Face Detection/Recognition/Alignments, implemented in T
 
 It is being implemented...
 
+## Main Contributers
+
+@ildoonet @hahahahannie
+
 ## Models
 
 ### Baseline
