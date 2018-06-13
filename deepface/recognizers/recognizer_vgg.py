@@ -9,15 +9,26 @@ from scipy.io import loadmat
 import pickle
 
 from deepface.confs.conf import DeepFaceConfs
-from deepface.utils.common import grouper, rotate_dot
+from deepface.utils.common import grouper, rotate_dot, get_roi
 
 from .recognizer_base import FaceRecognizer
+
+
+def face_to_roi(npimg, faces):
+    rois = []
+    for face in faces:
+        roi = get_roi(npimg, face)
+        if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
+            cv2.imshow('roi', roi)
+            cv2.waitKey(0)
+        rois.append(roi)
+    return rois
 
 
 class FaceRecognizerVGG(FaceRecognizer):
     NAME = 'recognizer_vgg'
 
-    def __init__(self):
+    def __init__(self, custom_db=None):
         self.batch_size = 4
         dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'vggface')
         filename = 'weight.mat'
@@ -75,10 +86,13 @@ class FaceRecognizerVGG(FaceRecognizer):
         self.persistent_sess = tf.Session(graph=self.graph)
         self.db = None
 
-        db_path = DeepFaceConfs.get()['recognizer']['vgg'].get('db', '')
-        if db_path:
-            with open(os.path.join(dir_path, db_path), 'rb') as f:
-                self.db = pickle.load(f)
+        if custom_db:
+            db_path = custom_db
+        else:
+            db_path = DeepFaceConfs.get()['recognizer']['vgg'].get('db', '')
+            db_path = os.path.join(dir_path, db_path)
+        with open(db_path, 'rb') as f:
+            self.db = pickle.load(f)
 
         # warm-up
         self.persistent_sess.run([self.network['prob'], self.network['fc7']], feed_dict={
@@ -88,7 +102,7 @@ class FaceRecognizerVGG(FaceRecognizer):
     def name(self):
         return FaceRecognizerVGG.NAME
 
-    def detect(self, rois):
+    def get_new_rois(self, rois):
         new_rois = []
         for roi in rois:
             if roi.shape[0] != self.input_hw[0] or roi.shape[1] != self.input_hw[1]:
@@ -98,6 +112,15 @@ class FaceRecognizerVGG(FaceRecognizer):
             else:
                 # roi = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
                 new_rois.append(roi)
+        return new_rois
+
+    def extract_features(self, npimg, rois=None, faces=None):
+        if not rois and faces:
+            rois = face_to_roi(npimg=npimg,
+                               faces=faces)
+
+        if rois:
+            new_rois = self.get_new_rois(rois=rois)
 
         probs = []
         feats = []
@@ -111,6 +134,13 @@ class FaceRecognizerVGG(FaceRecognizer):
             feats.append(feat)
         probs = np.vstack(probs)[:len(rois)]
         feats = np.vstack(feats)[:len(rois)]
+
+        return probs, feats
+
+    def detect(self, npimg, rois=None, faces=None):
+        probs, feats = self.extract_features(npimg=npimg,
+                                             rois=rois,
+                                             faces=faces)
 
         if self.db is None:
             names = [[(self.class_names[idx], prop[idx]) for idx in
@@ -131,3 +161,14 @@ class FaceRecognizerVGG(FaceRecognizer):
             'feature': feats,
             'name': names
         }
+
+    def tag_faces(self, faces, result):
+        for face_idx, face in enumerate(faces):
+            face.face_feature = result['feature'][face_idx]
+            name, score = result['name'][face_idx][0]
+            if score < DeepFaceConfs.get()['recognizer']['score_th']:
+                continue
+            face.face_name = name
+            face.face_score = score
+
+        return faces

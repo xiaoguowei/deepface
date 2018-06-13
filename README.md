@@ -49,13 +49,13 @@ $ bash download.sh
 ### Test on samples
 
 ```bash
-$ python3 deepface.py save_and_run --path=./samples/faces
+$ python bin/face.py save_and_run --path=./samples/faces
 ```
 
 ### Test on a image
 
 ```bash
-$ python3 deepface.py run --visualize=true --image=./samples/blackpink/blackpink1.jpg
+$ python bin/face.py run --visualize=true --image=./samples/blackpink/blackpink1.jpg
 ```
 
 ## Reference
