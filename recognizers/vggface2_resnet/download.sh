@@ -1,4 +1,4 @@
-echo "download model graph : keras vggface"
+echo "download model graph : VGGFace-Resnet"
 
 extract_download_url() {
 

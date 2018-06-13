@@ -105,3 +105,5 @@ venv.bak/
 *.dat
 *.bz2
 result.jpg
+recognizers/vggface2_resnet/labels.npy
+recognizers/vggface2_resnet/weight.h5

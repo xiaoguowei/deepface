@@ -1,4 +1,4 @@
-echo "download model graph : cmu"
+echo "download model graph : VGGFace1"
 
 extract_download_url() {
 

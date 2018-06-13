@@ -70,7 +70,8 @@ class FaceRecognizerVGG(FaceRecognizer):
         self.network = network
 
         self.graph = tf.get_default_graph()
-        self.persistent_sess = tf.Session(graph=self.graph)
+        config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+        self.persistent_sess = tf.Session(graph=self.graph, config=config)
         self.db = None
 
         db_path = DeepFaceConfs.get()['recognizer']['vgg'].get('db', '')
