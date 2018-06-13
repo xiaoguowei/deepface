@@ -7,6 +7,7 @@ from tqdm import tqdm
 from deepface.confs.conf import DeepFaceConfs
 from deepface.detectors.detector_dlib import FaceDetectorDlib
 from deepface.recognizers.recognizer_vgg import FaceRecognizerVGG
+from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
 
 
 def get_detector(name='dlib'):
@@ -32,11 +33,13 @@ def get_recognizer(name='vgg', db=None):
     """
     if name == 'vgg':
         return FaceRecognizerVGG(custom_db=db)
+    elif name == 'vgg2':
+        return FaceRecognizerResnet(custom_db=db)
 
     return None
 
 
-def save_features(img_folder_path, output_path=None):
+def save_features(img_folder_path, output_path=None, method="vgg"):
     """
 
     :param path: folder contain images("./samples/faces/")
@@ -46,7 +49,7 @@ def save_features(img_folder_path, output_path=None):
                   for img_path in glob(os.path.join(img_folder_path, "*.jpg"))]
 
     detector = get_detector()
-    recognizer = get_recognizer()
+    recognizer = get_recognizer(name=method)
 
     features = {}
     for name, path in tqdm(name_paths):

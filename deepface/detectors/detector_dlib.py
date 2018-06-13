@@ -46,16 +46,19 @@ class FaceDetectorDlib(FaceDetector):
             bbox = BoundingBox(x, y, w, h, score)
 
             # find landmark
-            shape = self.predictor(npimg, det)
-            coords = np.zeros((68, 2), dtype=np.int)
-
-            # loop over the 68 facial landmarks and convert them
-            # to a 2-tuple of (x, y)-coordinates
-            for i in range(0, 68):
-                coords[i] = (shape.part(i).x, shape.part(i).y)
-            bbox.face_landmark = coords
+            bbox.face_landmark = self.detect_landmark(npimg, det)
 
             faces.append(bbox)
 
         faces = sorted(faces, key=lambda x: x.score, reverse=True)
         return faces
+
+    def detect_landmark(self, npimg, det):
+        shape = self.predictor(npimg, det)
+        coords = np.zeros((68, 2), dtype=np.int)
+
+        # loop over the 68 facial landmarks and convert them
+        # to a 2-tuple of (x, y)-coordinates
+        for i in range(0, 68):
+            coords[i] = (shape.part(i).x, shape.part(i).y)
+        return coords

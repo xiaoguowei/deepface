@@ -10,5 +10,13 @@ class FaceRecognizer(object):
         return 'recognizer'
 
     @abc.abstractmethod
+    def extract_features(self, npimg, rois, faces):
+        pass
+
+    @abc.abstractmethod
     def detect(self, rois):
+        pass
+
+    @abc.abstractmethod
+    def get_threshold(self):
         pass

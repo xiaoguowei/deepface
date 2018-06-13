@@ -9,20 +9,8 @@ from scipy.io import loadmat
 import pickle
 
 from deepface.confs.conf import DeepFaceConfs
-from deepface.utils.common import grouper, rotate_dot, get_roi
-
 from .recognizer_base import FaceRecognizer
-
-
-def face_to_roi(npimg, faces):
-    rois = []
-    for face in faces:
-        roi = get_roi(npimg, face)
-        if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
-            cv2.imshow('roi', roi)
-            cv2.waitKey(0)
-        rois.append(roi)
-    return rois
+from deepface.utils.common import grouper, faces_to_rois, feat_distance_cosine
 
 
 class FaceRecognizerVGG(FaceRecognizer):
@@ -83,7 +71,8 @@ class FaceRecognizerVGG(FaceRecognizer):
         self.network = network
 
         self.graph = tf.get_default_graph()
-        self.persistent_sess = tf.Session(graph=self.graph)
+        config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+        self.persistent_sess = tf.Session(graph=self.graph, config=config)
         self.db = None
 
         if custom_db:
@@ -114,10 +103,10 @@ class FaceRecognizerVGG(FaceRecognizer):
                 new_rois.append(roi)
         return new_rois
 
-    def extract_features(self, npimg, rois=None, faces=None):
+    def extract_features(self, rois=None, npimg=None, faces=None):
         if not rois and faces:
-            rois = face_to_roi(npimg=npimg,
-                               faces=faces)
+            rois = faces_to_rois(npimg=npimg,
+                                 faces=faces)
 
         if rois:
             new_rois = self.get_new_rois(rois=rois)
@@ -151,7 +140,7 @@ class FaceRecognizerVGG(FaceRecognizer):
             for feat in feats:
                 scores = []
                 for db_name, db_feature in self.db.items():
-                    similarity = np.dot(feat / np.linalg.norm(feat, 2), db_feature / np.linalg.norm(db_feature, 2))
+                    similarity = feat_distance_cosine(feat, db_feature)
                     scores.append((db_name, similarity))
                 scores.sort(key=lambda x: x[1], reverse=True)
                 names.append(scores)
@@ -162,13 +151,5 @@ class FaceRecognizerVGG(FaceRecognizer):
             'name': names
         }
 
-    def tag_faces(self, faces, result):
-        for face_idx, face in enumerate(faces):
-            face.face_feature = result['feature'][face_idx]
-            name, score = result['name'][face_idx][0]
-            if score < DeepFaceConfs.get()['recognizer']['score_th']:
-                continue
-            face.face_name = name
-            face.face_score = score
-
-        return faces
+    def get_threshold(self):
+        return DeepFaceConfs.get()['recognizer']['vgg']['score_th']

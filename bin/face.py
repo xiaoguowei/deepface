@@ -19,7 +19,8 @@ sys.path.append(base_dir)
 from deepface.confs.conf import DeepFaceConfs
 from deepface.detectors.detector_dlib import FaceDetectorDlib
 from deepface.recognizers.recognizer_vgg import FaceRecognizerVGG
-from deepface.utils.common import get_roi
+from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
+from deepface.utils.common import get_roi, feat_distance_l2, feat_distance_cosine
 from deepface.utils.visualization import draw_bboxs
 
 logger = logging.getLogger('DeepFace')
@@ -50,14 +51,15 @@ class DeepFace:
         logger.debug('set_recognizer old=%s new=%s' % (self.recognizer, recognizer))
         if recognizer == FaceRecognizerVGG.NAME:
             self.recognizer = FaceRecognizerVGG()
+        elif recognizer == FaceRecognizerResnet.NAME:
+            self.recognizer = FaceRecognizerResnet()
 
     def blackpink(self, visualize=True):
         imgs = ['./samples/blackpink/blackpink%d.jpg' % (i + 1) for i in range(7)]
         for img in imgs:
             self.run(image=img, visualize=visualize)
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
-            visualize=False):
+    def recognizer_test_run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/ajb.jpg', visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
 
@@ -74,32 +76,64 @@ class DeepFace:
             logger.error('image can not be read, path=%s' % image)
             sys.exit(-1)
 
+        if recognizer:
+            logger.debug('run face recognition+')
+            result = self.recognizer.detect([npimg[...,::-1]])
+            logger.debug('run face recognition-')
+        return
+
+    def run_recognizer(self, npimg, faces, recognizer=FaceRecognizerResnet.NAME):
+        self.set_recognizer(recognizer)
+        rois = []
+        for face in faces:
+            # roi = npimg[face.y:face.y+face.h, face.x:face.x+face.w, :]
+            roi = get_roi(npimg, face, roi_mode=recognizer)
+            if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
+                cv2.imshow('roi', roi)
+                cv2.waitKey(0)
+            rois.append(roi)
+            face.face_roi = roi
+
+        if len(rois) > 0:
+            logger.debug('run face recognition+')
+            result = self.recognizer.detect(rois=rois)
+            logger.debug('run face recognition-')
+            for face_idx, face in enumerate(faces):
+                face.face_feature = result['feature'][face_idx]
+                logger.debug('candidates: %s' % str(result['name'][face_idx]))
+                name, score = result['name'][face_idx][0]
+                # if score < self.recognizer.get_threshold():
+                #     continue
+                face.face_name = name
+                face.face_score = score
+        return faces
+
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/face-recog/samples/kakaobrain.jpg',
+            visualize=False):
+        self.set_detector(detector)
+        self.set_recognizer(recognizer)
+
+        if image is None:
+            return []
+        elif isinstance(image, str):
+            logger.debug('read image, path=%s' % image)
+            npimg = cv2.imread(image, cv2.IMREAD_COLOR)
+        elif isinstance(image, np.ndarray):
+            npimg = image
+        else:
+            logger.error('Argument image should be str or ndarray. image=%s' % str(image))
+            sys.exit(-1)
+
+        if npimg is None:
+            logger.error('image can not be read, path=%s' % image)
+            sys.exit(-1)
+
         logger.debug('run face detection+ %dx%d' % (npimg.shape[1], npimg.shape[0]))
         faces = self.detector.detect(npimg)
-        logger.debug('run face detection-')
+        logger.debug('run face detection- %s' % type(faces))
 
         if recognizer:
-            rois = []
-            for face in faces:
-                # roi = npimg[face.y:face.y+face.h, face.x:face.x+face.w, :]
-                roi = get_roi(npimg, face)
-                if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
-                    cv2.imshow('roi', roi)
-                    cv2.waitKey(0)
-                rois.append(roi)
-
-            if len(rois) > 0:
-                logger.debug('run face recognition+')
-                result = self.recognizer.detect(rois)
-                logger.debug('run face recognition-')
-                for face_idx, face in enumerate(faces):
-                    face.face_feature = result['feature'][face_idx]
-                    logger.debug('candidates: %s' % result['name'][face_idx])
-                    name, score = result['name'][face_idx][0]
-                    if score < DeepFaceConfs.get()['recognizer']['score_th']:
-                        continue
-                    face.face_name = name
-                    face.face_score = score
+            faces = self.run_recognizer(npimg, faces, recognizer)
 
         img = draw_bboxs(np.copy(npimg), faces)
         cv2.imwrite('result.jpg', img)
@@ -119,7 +153,7 @@ class DeepFace:
         self.save_features_path(path)
         self.run(image=image, visualize=visualize)
 
-    def save_features_path(self, path):
+    def save_features_path(self, path="./samples/blackpink/faces/"):
         """
 
         :param path: folder contain images("./samples/faces/")
@@ -135,10 +169,10 @@ class DeepFace:
             features[name] = faces[0].face_feature
 
         import pickle
-        with open(os.path.join("recognizers/vggface", DeepFaceConfs.get()['recognizer']['vgg']['db']), 'wb') as f:
-            pickle.dump(features, f, pickle.HIGHEST_PROTOCOL)
+        with open('db.pkl', 'wb') as f:
+            pickle.dump(features, f, protocol=2)
 
-    def test_lfw(self, set='test', model='baseline', visualize=True):
+    def test_lfw(self, set='test', model='baseline_resnet', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
         else:
@@ -158,6 +192,15 @@ class DeepFace:
             else:
                 logger.warning('line should have 3 or 4 elements, line=%s' % line)
 
+        if model == 'baseline':
+            recog = FaceRecognizerVGG.NAME
+            just_name = 'vgg'
+        elif model == 'baseline_resnet':
+            recog = FaceRecognizerResnet.NAME
+            just_name = 'resnet'
+        else:
+            raise Exception('invalid model name=%s' % model)
+
         logger.info('pair length=%d' % len(pairs))
         test_result = []  # score, label(1=same)
         for name1, idx1, name2, idx2 in tqdm(pairs):
@@ -171,8 +214,8 @@ class DeepFace:
             if img2 is None:
                 logger.warning('image not read, path=%s' % img2_path)
 
-            result1 = self.run(image=img1)
-            result2 = self.run(image=img2)
+            result1 = self.run(image=img1, recognizer=recog, visualize=False)
+            result2 = self.run(image=img2, recognizer=recog, visualize=False)
 
             if len(result1) == 0:
                 logger.warning('face not detected, name=%s(%d)! %s(%d)' % (name1, idx1, name2, idx2))
@@ -185,11 +228,11 @@ class DeepFace:
 
             feat1 = result1[0].face_feature
             feat2 = result2[0].face_feature
-            similarity = np.dot(feat1 / np.linalg.norm(feat1, 2), feat2 / np.linalg.norm(feat2, 2))
+            similarity = feat_distance_cosine(feat1, feat2)
             test_result.append((similarity, name1 == name2))
 
-        # calculate accuracy
-        accuracy = sum([label == (score > 0.78) for score, label in test_result]) / float(len(test_result))
+        # calculate accuracy TODO
+        accuracy = sum([label == (score > DeepFaceConfs.get()['recognizer'][just_name]['score_th']) for score, label in test_result]) / float(len(test_result))
         logger.info('accuracy=%.8f' % accuracy)
 
         # ROC Curve, AUC
@@ -227,11 +270,22 @@ class DeepFace:
         eer = fnr[np.nanargmin(np.absolute((fnr - fpr)))]
         logger.info('1-eer=%.4f' % (1.0 - eer))
 
+        with open('./etc/test_lfw.pkl', 'rb') as f:
+            results = pickle.load(f)
+
         if visualize in [True, 'True', 'true', 1, '1']:
             fig = plt.figure()
             a = fig.add_subplot(1, 2, 1)
             plt.title('Experiment on LFW')
             plt.plot(fpr, tpr, label='%s(%.4f)' % (model, 1 - eer))  # TODO : label
+
+            for model_name in results:
+                if model_name == model:
+                    continue
+                fpr_prev = results[model_name]['fpr']
+                tpr_prev = results[model_name]['tpr']
+                eer_prev = results[model_name]['eer']
+                plt.plot(fpr_prev, tpr_prev, label='%s(%.4f)' % (model_name, 1 - eer_prev))
 
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.05])
@@ -248,12 +302,9 @@ class DeepFace:
             a.legend()
             a.set_title('%s : TP, TN' % model)
 
+            fig.savefig('./etc/roc.png', dpi=300)
             plt.show()
             plt.draw()
-            fig.savefig('./etc/roc.png', dpi=300)
-
-        with open('./etc/test_lfw.pkl', 'rb') as f:
-            results = pickle.load(f)
 
         with open('./etc/test_lfw.pkl', 'wb') as f:
             results[model] = {

@@ -3,6 +3,7 @@ import math
 
 import cv2
 import numpy as np
+
 try:
     from itertools import zip_longest
 except:
@@ -28,7 +29,27 @@ def roundint(v):
     return int(round(v))
 
 
-def get_roi(img, face):
+def tag_faces(faces, result, threshold):
+    for face_idx, face in enumerate(faces):
+        face.face_feature = result['feature'][face_idx]
+        name, score = result['name'][face_idx][0]
+        if score < threshold:
+            continue
+        face.face_name = name
+        face.face_score = score
+
+    return faces
+
+
+def faces_to_rois(npimg, faces, roi_mode='recognizer_vgg'):
+    rois = []
+    for face in faces:
+        roi = get_roi(npimg, face, roi_mode=roi_mode)
+        rois.append(roi)
+    return rois
+
+
+def get_roi(img, face, roi_mode):
     """
     :return: target_size 크기의 Cropped & Aligned Face Image
     """
@@ -62,9 +83,10 @@ def get_roi(img, face):
 
         aligned_w = max_x - min_x
         aligned_h = max_y - min_y
-        crop_y_ratio = float(DeepFaceConfs.get()['roi']['crop_y_ratio'])
+        crop_y_ratio = float(DeepFaceConfs.get()['roi'][roi_mode]['crop_y_ratio'])
         center_point = ((min_x + max_x) / 2, min_y * crop_y_ratio + max_y * (1.0 - crop_y_ratio))
-        image_size = int(max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi']['size_ratio'])   # TODO : Parameter tuning?
+        image_size = int(
+            max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi'][roi_mode]['size_ratio'])  # TODO : Parameter tuning?
     else:
         min_x, min_y = rotate_dot((face.x, face.y), mat)
         max_x, max_y = rotate_dot((face.x + face.w, face.y + face.h), mat)
@@ -72,7 +94,7 @@ def get_roi(img, face):
         aligned_w = max_x - min_x
         aligned_h = max_y - min_y
         center_point = ((min_x + max_x) / 2, (min_y + max_y) / 2)
-        image_size = int(max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi']['size_ratio'])
+        image_size = int(max(aligned_w, aligned_h) * DeepFaceConfs.get()['roi'][roi_mode]['size_ratio'])
 
     crop_x1 = roundint(center_point[0] - image_size / 2)
     crop_y1 = roundint(center_point[1] - image_size / 2)
@@ -89,7 +111,8 @@ def get_roi(img, face):
     try:
         pasted[start_y:start_y + crop_h, start_x:start_x + crop_w] = cropped[:crop_h, :crop_w]  # TODO
     except:
-        print(crop_y_ratio, (1.0 - crop_y_ratio), roll, pasted.shape, cropped.shape, 'min', min_x, max_x, min_y, max_y, 'imgsize', image_size, start_x, start_y, crop_w, crop_h)
+        print(crop_y_ratio, (1.0 - crop_y_ratio), roll, pasted.shape, cropped.shape, 'min', min_x, max_x, min_y, max_y,
+              'imgsize', image_size, start_x, start_y, crop_w, crop_h)
         print(center_point)
         # crop_y_ratio set 0.3667256819925064
         # 0.0 (128, 128, 3) (249, 128, 3) min 76 166 101 193 imgsize 128 0 129 128 -1
@@ -175,3 +198,15 @@ def rotationMatrixToEulerAngles(R):
         z = 0
 
     return np.array([x, y, z])
+
+
+def feat_distance_cosine(feat1, feat2):
+    similarity = np.dot(feat1 / np.linalg.norm(feat1, 2), feat2 / np.linalg.norm(feat2, 2))
+    return similarity
+
+
+def feat_distance_l2(feat1, feat2):
+    feat1_norm = feat1 / np.linalg.norm(feat1, 2)
+    feat2_norm = feat2 / np.linalg.norm(feat2, 2)
+    similarity = 1.0 - np.linalg.norm(feat1_norm - feat2_norm, 2) / 2.0
+    return similarity
