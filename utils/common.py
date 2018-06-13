@@ -8,7 +8,7 @@ try:
 except:
     from itertools import izip_longest as zip_longest
 
-from confs.conf import DeepFaceConfs
+from ..confs.conf import DeepFaceConfs
 
 
 def grouper(iterable, n, fillvalue=None):

@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 
 from confs.conf import DeepFaceConfs
 from detectors.detector_dlib import FaceDetectorDlib
-from recognizers.recognizer_resnet import FaceRecognizerResnet
 from recognizers.recognizer_vgg import FaceRecognizerVGG
+from recognizers.recognizer_resnet import FaceRecognizerResnet
 from utils.common import get_roi, feat_distance_l2, feat_distance_cosine
 from utils.visualization import draw_bboxs
 
@@ -78,12 +78,40 @@ class DeepFace:
             logger.debug('run face recognition-')
         return
 
+    def run_recognizer(self, npimg, faces, recognizer=FaceRecognizerResnet.NAME):
+        self.set_recognizer(recognizer)
+        rois = []
+        for face in faces:
+            # roi = npimg[face.y:face.y+face.h, face.x:face.x+face.w, :]
+            roi = get_roi(npimg, face, roi_mode=recognizer)
+            if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
+                cv2.imshow('roi', roi)
+                cv2.waitKey(0)
+            rois.append(roi)
+            face.face_roi = roi
+
+        if len(rois) > 0:
+            logger.debug('run face recognition+')
+            result = self.recognizer.detect(rois)
+            logger.debug('run face recognition-')
+            for face_idx, face in enumerate(faces):
+                face.face_feature = result['feature'][face_idx]
+                logger.debug('candidates: %s' % str(result['name'][face_idx]))
+                name, score = result['name'][face_idx][0]
+                # if score < self.recognizer.get_threshold():
+                #     continue
+                face.face_name = name
+                face.face_score = score
+        return faces
+
     def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/face-recog/samples/kakaobrain.jpg',
-            visualize=True):
+            visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
 
-        if isinstance(image, str):
+        if image is None:
+            return []
+        elif isinstance(image, str):
             logger.debug('read image, path=%s' % image)
             npimg = cv2.imread(image, cv2.IMREAD_COLOR)
         elif isinstance(image, np.ndarray):
@@ -98,30 +126,10 @@ class DeepFace:
 
         logger.debug('run face detection+ %dx%d' % (npimg.shape[1], npimg.shape[0]))
         faces = self.detector.detect(npimg)
-        logger.debug('run face detection-')
+        logger.debug('run face detection- %s' % type(faces))
 
         if recognizer:
-            rois = []
-            for face in faces:
-                # roi = npimg[face.y:face.y+face.h, face.x:face.x+face.w, :]
-                roi = get_roi(npimg, face, roi_mode=recognizer)
-                if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
-                    cv2.imshow('roi', roi)
-                    cv2.waitKey(0)
-                rois.append(roi)
-
-            if len(rois) > 0:
-                logger.debug('run face recognition+')
-                result = self.recognizer.detect(rois)
-                logger.debug('run face recognition-')
-                for face_idx, face in enumerate(faces):
-                    face.face_feature = result['feature'][face_idx]
-                    logger.debug('candidates: %s' % str(result['name'][face_idx]))
-                    name, score = result['name'][face_idx][0]
-                    if score < self.recognizer.get_threshold():
-                        continue
-                    face.face_name = name
-                    face.face_score = score
+            faces = self.run_recognizer(npimg, faces, recognizer)
 
         img = draw_bboxs(np.copy(npimg), faces)
         cv2.imwrite('result.jpg', img)

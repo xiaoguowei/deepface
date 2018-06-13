@@ -6,9 +6,9 @@ import numpy as np
 import tensorflow as tf
 import pickle
 
-from confs.conf import DeepFaceConfs
-from recognizers.recognizer_base import FaceRecognizer
-from utils.common import grouper, rotate_dot
+from ..confs.conf import DeepFaceConfs
+from ..recognizers.recognizer_base import FaceRecognizer
+from ..utils.common import grouper, rotate_dot
 
 
 def conv_block(input_tensor, filters, stage, block, strides=(2, 2), bias=False):

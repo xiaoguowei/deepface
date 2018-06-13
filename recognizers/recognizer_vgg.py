@@ -8,9 +8,9 @@ import tensorflow as tf
 from scipy.io import loadmat
 import pickle
 
-from confs.conf import DeepFaceConfs
-from recognizers.recognizer_base import FaceRecognizer
-from utils.common import grouper, rotate_dot, feat_distance_cosine
+from ..confs.conf import DeepFaceConfs
+from ..recognizers.recognizer_base import FaceRecognizer
+from ..utils.common import grouper, rotate_dot, feat_distance_cosine
 
 
 class FaceRecognizerVGG(FaceRecognizer):

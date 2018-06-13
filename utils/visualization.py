@@ -1,6 +1,6 @@
 import cv2
 
-from utils.colors import get_random_color
+from ..utils.colors import get_random_color
 
 
 def draw_bbox(npimg, bbox, color=(0, 255, 0)):
