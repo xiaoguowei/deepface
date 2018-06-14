@@ -23,3 +23,10 @@ Zip에 대한 설명
 1. create_fddb_tf_record.py
   바이트 인코딩이 필요한 항목에 대해서 utf-8 인코딩을 추가하였습니다.
 
+----UPDATE 6/15/2018 - 3:06am
+1. create_fddb_tf_record.py
+  Need to save the 'normalized' coordinates
+2. create_wider_tf_record.py
+  Script for adapting WIDER dataset
+
+

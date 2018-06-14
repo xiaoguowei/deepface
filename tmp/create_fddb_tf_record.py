@@ -1,17 +1,4 @@
-# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
+
 
 r"""Convert raw FDDB dataset to TFRecord for face_detection.
 
@@ -209,10 +196,10 @@ def create_tf_example(label_and_data_info):
       'image/source_id': dataset_util.bytes_feature(filename.encode('utf8')),
       'image/encoded': dataset_util.bytes_feature(encoded_image_data),
       'image/format': dataset_util.bytes_feature(image_format),
-      'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
-      'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
-      'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
-      'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
+      'image/object/bbox/xmin': dataset_util.float_list_feature([float(x) / width for x in xmins]),
+      'image/object/bbox/xmax': dataset_util.float_list_feature([float(x) / width for x in xmaxs]),
+      'image/object/bbox/ymin': dataset_util.float_list_feature([float(y) / height for y in ymins]),
+      'image/object/bbox/ymax': dataset_util.float_list_feature([float(y) / height for y in ymaxs]),
       'image/object/class/text': dataset_util.bytes_list_feature([x.encode('utf8') for x in classes_text]),
       'image/object/class/label': dataset_util.int64_list_feature(classes),
   }))
