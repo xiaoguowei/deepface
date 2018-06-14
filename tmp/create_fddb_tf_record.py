@@ -126,7 +126,7 @@ def load_all_info():
           element['filename'] += '.jpg'
           image = PIL.Image.open(element['filename'])
           element['width'], element['height'] = image.size
-          element['format'] = 'jpeg'.encode('utf-8')
+          element['format'] = 'jpeg'.encode('utf8')
           with tf.gfile.GFile(element['filename'], 'rb') as fid:
             element['bytes'] = fid.read()
           index += 1
@@ -205,15 +205,15 @@ def create_tf_example(label_and_data_info):
   tf_label_and_data = tf.train.Example(features=tf.train.Features(feature={
       'image/height': dataset_util.int64_feature(height),
       'image/width': dataset_util.int64_feature(width),
-      'image/filename': dataset_util.bytes_feature(filename),
-      'image/source_id': dataset_util.bytes_feature(filename),
+      'image/filename': dataset_util.bytes_feature(filename.encode('utf8')),
+      'image/source_id': dataset_util.bytes_feature(filename.encode('utf8')),
       'image/encoded': dataset_util.bytes_feature(encoded_image_data),
       'image/format': dataset_util.bytes_feature(image_format),
       'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
       'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
       'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
       'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
-      'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
+      'image/object/class/text': dataset_util.bytes_list_feature([x.encode('utf8') for x in classes_text]),
       'image/object/class/label': dataset_util.int64_list_feature(classes),
   }))
   return tf_label_and_data

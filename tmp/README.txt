@@ -19,4 +19,7 @@ Zip에 대한 설명
 2. create_fddb_tf_record_test.py
   박스를 제대로 치는지 테스트 해볼수 있는 간단한 스크립트 입니다. 제가 샘플 몇개를 tmp/sample_faces 라는 폴더 안에 넣어놨습니다.
 
+----UPDATE 6/14/2018 - 10:48pm
+1. create_fddb_tf_record.py
+  바이트 인코딩이 필요한 항목에 대해서 utf-8 인코딩을 추가하였습니다.
 
