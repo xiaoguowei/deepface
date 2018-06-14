@@ -145,7 +145,7 @@ def load_all_info():
             coords = lines[line_i].split(" ")
             #print(coords)
             coords = list(map(float, coords[:5]))
-            [xmin, xmax, ymin, ymax] = convert_ellipse2rect(coords)
+            [xmin, xmax, ymin, ymax] = convert_ellipse2rect(coords, element['width'], element['height'])
             element['xmins'].append(xmin)
             element['xmaxs'].append(xmax)
             element['ymins'].append(ymin)
@@ -166,15 +166,15 @@ def load_all_info():
   return [train_all_info, val_all_info]
 
 
-def convert_ellipse2rect(coords):
+def convert_ellipse2rect(coords, width, height):
     #note coords is in format - (<major_axis_radius minor_axis_radius angle center_x center_y 1>)
     rad = coords[0]
     cx = coords[3]
     cy = coords[4]
-    xmin = cx - rad
-    xmax = cx + rad
-    ymin = cy - rad
-    ymax = cy + rad
+    xmin = max(cx - rad, 0)
+    xmax = min(cx + rad, width - 1)
+    ymin = max(cy - rad, 0)
+    ymax = min(cy + rad, height - 1)
     return [xmin, xmax, ymin, ymax]
 
 
