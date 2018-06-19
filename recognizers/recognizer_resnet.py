@@ -175,7 +175,9 @@ class FaceRecognizerResnet(FaceRecognizer):
         # Create session:
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         init = tf.global_variables_initializer()
-        sess = tf.Session()
+
+        config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+        sess = tf.Session(config=config)
         self.persistent_sess = sess
 
         # Warm-up:
