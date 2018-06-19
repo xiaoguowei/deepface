@@ -103,7 +103,6 @@ class DeepFace:
         if recognizer:
             rois = []
             for face in faces:
-                # roi = npimg[face.y:face.y+face.h, face.x:face.x+face.w, :]
                 roi = get_roi(npimg, face, roi_mode=recognizer)
                 if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
                     cv2.imshow('roi', roi)
