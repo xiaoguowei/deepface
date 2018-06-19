@@ -1,0 +1,3 @@
+[submodule "detectors/ssd_face"]
+	path = detectors/ssd_face
+	url = https://github.com/tensorflow/models.git
