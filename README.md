@@ -76,11 +76,17 @@ $ python3 deepface.py run --visualize=true --image=./samples/blackpink/blackpink
 
 ### Improvements
 - SSD face dection adapter implementation
-#### How To
+#### How To Prepare your SSD model
 ```bash
 1. Put your 'frozen' (.pb) ssd model inside detectors/ssd directory
 2. Change your Detection Model to SSD inside deepface.py run()
 ```
+#### Testing the SSD Model Performance with webcam
+Simple testing script to test SSD performance
+```bash
+$ python test_scripts.py
+```
+
 #### Current Problems
 
 ![blackpink with deepface(ssd model)](./etc/current_status.jpg)
