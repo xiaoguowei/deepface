@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from confs.conf import DeepFaceConfs
 from detectors.detector_dlib import FaceDetectorDlib
+from detectors.detector_ssd import FaceDetectorSsd
 from recognizers.recognizer_vgg import FaceRecognizerVGG
 from utils.common import get_roi
 from utils.visualization import draw_bboxs
@@ -39,6 +40,8 @@ class DeepFace:
         logger.debug('set_detector old=%s new=%s' % (self.detector, detector))
         if detector == FaceDetectorDlib.NAME:
             self.detector = FaceDetectorDlib()
+        elif detector == FaceDetectorSsd.NAME:
+            self.detector = FaceDetectorSsd()
 
     def set_recognizer(self, recognizer):
         if self.recognizer is not None and self.recognizer.name() == recognizer:
@@ -52,7 +55,7 @@ class DeepFace:
         for img in imgs:
             self.run(image=img, visualize=visualize)
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
+    def run(self, detector=FaceDetectorSsd.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
             visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
@@ -72,6 +75,12 @@ class DeepFace:
 
         logger.debug('run face detection+ %dx%d' % (npimg.shape[1], npimg.shape[0]))
         faces = self.detector.detect(npimg)
+
+        print("----------------")
+        for face in faces:
+
+            print(face.face_landmark)
+        print("------------------")
         logger.debug('run face detection-')
 
         if recognizer:
