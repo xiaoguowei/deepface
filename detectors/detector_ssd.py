@@ -30,6 +30,7 @@ class FaceDetectorSsd(FaceDetector):
             DeepFaceConfs.get()['detector']['dlib']['landmark_detector']
         )
         self.predictor = dlib.shape_predictor(predictor_path)
+        self.session = tf.Session(graph=self.detector)
 
 
     def load_graph(self, graph_path):
@@ -66,12 +67,11 @@ class FaceDetectorSsd(FaceDetector):
         y3 = self.detector.get_tensor_by_name('prefix/detection_classes:0')
 
         # We launch a Session
-        with tf.Session(graph=self.detector) as sess:
-            # Note: we don't need to initialize/restore anything
-            # There is no Variables in this graph, only hardcoded constants
-            dets,scores,classes = sess.run([y1,y2,y3], feed_dict={
-                x: [npimg]
-            })
+        # Note: we don't need to initialize/restore anything
+        # There is no Variables in this graph, only hardcoded constants
+        dets,scores,classes = self.session.run([y1,y2,y3], feed_dict={
+            x: [npimg]
+        })
 
 
         return dets[0], scores[0]
