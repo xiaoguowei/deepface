@@ -1,4 +1,7 @@
-echo "download model graph : VGGFace-Resnet"
+#!/bin/bash
+
+echo "[download] model graph : VGGFace-Resnet"
+DIR="$(cd "$(dirname "$0")" && pwd)"
 
 extract_download_url() {
 
@@ -7,5 +10,5 @@ extract_download_url() {
 
 }
 
-wget $( extract_download_url http://www.mediafire.com/file/datqeencsrqua22/rcmalli_vggface_tf_resnet50.h5 ) -O weight.h5
-wget $( extract_download_url http://www.mediafire.com/file/sc2fo5xcktwbqkd/rcmalli_vggface_labels_v2.npy ) -O labels.npy
+wget $( extract_download_url http://www.mediafire.com/file/datqeencsrqua22/rcmalli_vggface_tf_resnet50.h5 ) -O $DIR/weight.h5
+wget $( extract_download_url http://www.mediafire.com/file/sc2fo5xcktwbqkd/rcmalli_vggface_labels_v2.npy ) -O $DIR/labels.npy
