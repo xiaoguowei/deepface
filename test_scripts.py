@@ -36,6 +36,9 @@ def test_ssd():
 
 def test_ssd_webcam():
     cap = cv2.VideoCapture(0)
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    out = cv2.VideoWriter('ssd_output.mp4', fourcc, 60.0, (640, 480))
 
     face_detector = FaceDetectorSsd()
     while(True):
@@ -51,12 +54,14 @@ def test_ssd_webcam():
         cv2.namedWindow(window_name, cv2.WND_PROP_AUTOSIZE)
         cv2.startWindowThread()
 
+        out.write(test_image)
         cv2.imshow(window_name, test_image)
 
         if cv2.waitKey(5) & 0xFF == ord('q'):
             break
 
     cap.release()
+    out.release()
     cv2.destroyAllWindows()
 
 
