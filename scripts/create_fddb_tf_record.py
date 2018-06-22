@@ -61,7 +61,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 def main(_):
 
   #TODO: Make this easier to change somehow...
-  FLAGS.output_dir = "/home/kabrain2/data/parsed"
+  FLAGS.output_dir = "../data/"
   FLAGS.image_dir = "/home/kabrain2/data/raw/originalPics"
   FLAGS.annotation_dir = "/home/kabrain2/data/raw/FDDB-folds"
 
@@ -155,13 +155,15 @@ def load_all_info():
 
 def convert_ellipse2rect(coords, width, height):
     #note coords is in format - (<major_axis_radius minor_axis_radius angle center_x center_y 1>)
-    rad = coords[0]
+    rad_M = coords[0]
+    rad_m = coords[1]
+    rad_avg = float(rad_M + rad_m) / 2
     cx = coords[3]
-    cy = coords[4]
-    xmin = max(cx - rad, 0)
-    xmax = min(cx + rad, width - 1)
-    ymin = max(cy - rad, 0)
-    ymax = min(cy + rad, height - 1)
+    cy = coords[4] + rad_m / 4
+    xmin = max(cx - rad_m, 0)
+    xmax = min(cx + rad_m, width - 1)
+    ymin = max(cy - rad_m, 0)
+    ymax = min(cy + rad_m, height - 1)
     return [xmin, xmax, ymin, ymax]
 
 
