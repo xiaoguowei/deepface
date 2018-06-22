@@ -5,7 +5,7 @@ detector:
     landmark_detector: dlib/shape_predictor_68_face_landmarks.dat
   ssd:
     score_th: 0.5
-    landmark_detector: ssd/frozen_inference_graph.pb
+    frozen_graph: ssd/frozen_inference_graph.pb
 
 roi:
   crop_y_ratio: 0.536
