@@ -8,6 +8,7 @@
 ## Models
 
 - SSD + Inception v2
+- SSD + Mobilenet v2
 
 ## Dependencies & Install
 
@@ -53,3 +54,9 @@ $ python tensorflow-models/research/object_detection/eval.py \
     --checkpoint_dir=./checkpoints/ssd_inception_v2_fddb/ \
     --eval_dir=./evaluation/
 ```
+
+## Reference
+
+- Tensorflow Object Detection API
+  - https://github.com/tensorflow/models/blob/master/research/object_detection/
+  - https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/installation.md
