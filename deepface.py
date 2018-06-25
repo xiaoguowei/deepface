@@ -55,7 +55,7 @@ class DeepFace:
         for img in imgs:
             self.run(image=img, visualize=visualize)
 
-    def run(self, detector=FaceDetectorSsd.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
+    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerVGG.NAME, image='./samples/ak.jpg',
             visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
