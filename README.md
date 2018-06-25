@@ -73,3 +73,27 @@ $ python3 deepface.py run --visualize=true --image=./samples/blackpink/blackpink
 ### Datasets
 
 [1] LFW : http://vis-www.cs.umass.edu/lfw/
+
+### Improvements
+- SSD face dection adapter implementation
+
+#### How To Prepare your SSD model
+```bash
+1. Put your 'frozen' (.pb) ssd model inside detectors/ssd directory
+2. Change your Detection Model to SSD inside deepface.py run()
+
+Note: Sample SSD model can be downloaded here: https://drive.google.com/open?id=1t9YzkfjHf6NIt5UHcebFM1y0EqO98JQc
+```
+#### Testing the SSD Model Performance with webcam
+Simple testing script to test SSD performance
+```bash
+$ python test_scripts.py
+```
+
+#### Current Problems
+
+![blackpink with deepface(ssd model)](./etc/current_status.jpg)
+- The dlib face feature extraction does not work well with big boxes
+- ssd model does not detect well when given small faces (need to retrain)
+
+
