@@ -104,15 +104,18 @@ class FaceRecognizerVGG(FaceRecognizer):
         return new_rois
 
     def extract_features(self, rois=None, npimg=None, faces=None):
+        probs = []
+        feats = []
+
         if not rois and faces:
             rois = faces_to_rois(npimg=npimg,
                                  faces=faces)
 
         if rois:
             new_rois = self.get_new_rois(rois=rois)
+            if len(new_rois) == 0:
+                return probs, feats
 
-        probs = []
-        feats = []
         for roi_chunk in grouper(new_rois, self.batch_size,
                                  fillvalue=np.zeros((self.input_hw[0], self.input_hw[1], 3), dtype=np.uint8)):
             prob, feat = self.persistent_sess.run([self.network['prob'], self.network['fc7']], feed_dict={
