@@ -111,10 +111,9 @@ class FaceRecognizerVGG(FaceRecognizer):
             rois = faces_to_rois(npimg=npimg,
                                  faces=faces)
 
-        if rois:
+        new_rois = []
+        if len(rois) > 0:
             new_rois = self.get_new_rois(rois=rois)
-            if len(new_rois) == 0:
-                return probs, feats
 
         for roi_chunk in grouper(new_rois, self.batch_size,
                                  fillvalue=np.zeros((self.input_hw[0], self.input_hw[1], 3), dtype=np.uint8)):
