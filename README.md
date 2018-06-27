@@ -15,6 +15,7 @@
 | Model | Training<br/>Dataset | mAP | mAP<br/>(large) | mAP<br/>(medium) | mAP<br/>(small) | mAP<br/>@.50IOU | mAP<br/>@.75IOU | Recall/AR@1 | AR@10 | AR@100 | AR@100<br/>(large) | AR@100<br/>(medium) | AR@100<br/>(small) | classification<br/>loss | localization<br/>loss |
 |-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
 | SSD + Mobilenet v2 | FDDB | 0.714 | 0.788 | 0.690 | 0.242 | 0.962 | 0.848 | 0.446 | 0.763 | 0.768 | 0.829 | 0.750 | 0.410 | 2.978 | 0.194 |
+| SSD + Mobilenet v2 | All  | 0.578 | 0.646 | 0.566 | 0.213 | 0.954 | 0.641 | 0.364 | 0.649 | 0.652 | 0.698 | 0.646 | 0.286 | 2.446 | 0.403 |
 | | | | | | | | | | | | | | | | 
 | SSD + Inception v2 | FDDB | 0.648 | 0.761 | 0.589 | 0.321 | 0.971 | 0.731 | 0.406 | 0.716 | 0.721 | 0.818 | 0.678 | 0.432 | 6.272 | 0.546 |
 
