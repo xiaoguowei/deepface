@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 from confs.conf import DeepFaceConfs
 from detectors.detector_dlib import FaceDetectorDlib
-from detectors.detector_ssd import FaceDetectorSsd
+from detectors.detector_ssd import FaceDetectorSSDMobilenetV2
 from recognizers.recognizer_vgg import FaceRecognizerVGG
 from utils.common import get_roi
 from utils.visualization import draw_bboxs
@@ -40,8 +40,8 @@ class DeepFace:
         logger.debug('set_detector old=%s new=%s' % (self.detector, detector))
         if detector == FaceDetectorDlib.NAME:
             self.detector = FaceDetectorDlib()
-        elif detector == FaceDetectorSsd.NAME:
-            self.detector = FaceDetectorSsd()
+        elif detector == 'detector_ssd_mobilenet_v2':
+            self.detector = FaceDetectorSSDMobilenetV2()
 
     def set_recognizer(self, recognizer):
         if self.recognizer is not None and self.recognizer.name() == recognizer:
@@ -76,17 +76,11 @@ class DeepFace:
         logger.debug('run face detection+ %dx%d' % (npimg.shape[1], npimg.shape[0]))
         faces = self.detector.detect(npimg)
 
-        print("----------------")
-        for face in faces:
-
-            print(face.face_landmark)
-        print("------------------")
         logger.debug('run face detection-')
 
         if recognizer:
             rois = []
             for face in faces:
-                # roi = npimg[face.y:face.y+face.h, face.x:face.x+face.w, :]
                 roi = get_roi(npimg, face)
                 if int(os.environ.get('DEBUG_SHOW', 0)) == 1:
                     cv2.imshow('roi', roi)

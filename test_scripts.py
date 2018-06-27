@@ -3,12 +3,11 @@ import cv2
 import numpy as np
 
 
-from detectors.detector_ssd import FaceDetectorSsd
-
+from detectors.detector_ssd import FaceDetectorSSDMobilenetV2
 
 
 def test_ssd():
-    face_detector = FaceDetectorSsd()
+    face_detector = FaceDetectorSSDMobilenetV2()
     image = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "samples/blackpink/blackpink4.jpg")
@@ -34,13 +33,14 @@ def test_ssd():
 
     print("done")
 
+
 def test_ssd_webcam():
     cap = cv2.VideoCapture(0)
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'MP4V')
     out = cv2.VideoWriter('ssd_output.mp4', fourcc, 60.0, (640, 480))
 
-    face_detector = FaceDetectorSsd()
+    face_detector = FaceDetectorSSDMobilenetV2()
     while(True):
         ret, frame = cap.read()
 

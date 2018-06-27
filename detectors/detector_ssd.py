@@ -11,19 +11,22 @@ from detectors.detector_base import FaceDetector
 from utils.bbox import BoundingBox
 
 
-class FaceDetectorSsd(FaceDetector):
-    """
-    reference : https://www.pyimagesearch.com/2017/04/03/facial-landmarks-dlib-opencv-python/
-    """
+class FaceDetectorSSD(FaceDetector):
     NAME = 'detector_ssd'
 
-    def __init__(self):
-        super(FaceDetectorSsd, self).__init__()
+    def __init__(self, specific_model):
+        super(FaceDetectorSSD, self).__init__()
+        self.specific_model = specific_model
         graph_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            DeepFaceConfs.get()['detector']['ssd']['frozen_graph']
+            DeepFaceConfs.get()['detector'][self.specific_model]['frozen_graph']
         )
-        self.detector = self.load_graph(graph_path)
+        self.detector = self._load_graph(graph_path)
+
+        self.tensor_image = self.detector.get_tensor_by_name('prefix/image_tensor:0')
+        self.tensor_boxes = self.detector.get_tensor_by_name('prefix/detection_boxes:0')
+        self.tensor_score = self.detector.get_tensor_by_name('prefix/detection_scores:0')
+        self.tensor_class = self.detector.get_tensor_by_name('prefix/detection_classes:0')
 
         predictor_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -32,13 +35,10 @@ class FaceDetectorSsd(FaceDetector):
         self.predictor = dlib.shape_predictor(predictor_path)
         self.session = tf.Session(graph=self.detector)
 
-
-    def load_graph(self, graph_path):
-        # Here we will assume the frozen graph is in detectors/ssd/frozen_inference_graph.pb
+    def _load_graph(self, graph_path):
         # We load the protobuf file from the disk and parse it to retrieve the
         # unserialized graph_def
-        frozen_graph_filename = graph_path
-        with tf.gfile.GFile(frozen_graph_filename, "rb") as f:
+        with tf.gfile.GFile(graph_path, "rb") as f:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
 
@@ -46,46 +46,23 @@ class FaceDetectorSsd(FaceDetector):
         with tf.Graph().as_default() as graph:
             # The name var will prefix every op/nodes in your graph
             # Since we load everything in a new graph, this is not needed
-            tf.import_graph_def(graph_def, name = "prefix")
+            tf.import_graph_def(graph_def, name="prefix")
         return graph
 
-
     def name(self):
-        return FaceDetectorSsd.NAME
-
-
-    def evaluate(self, npimg):
-
-
-        #for op in self.detector.get_operations():
-        #    print(op)
-
-        # We access the input and output nodes
-        x = self.detector.get_tensor_by_name('prefix/image_tensor:0')
-        y1 = self.detector.get_tensor_by_name('prefix/detection_boxes:0')
-        y2 = self.detector.get_tensor_by_name('prefix/detection_scores:0')
-        y3 = self.detector.get_tensor_by_name('prefix/detection_classes:0')
-
-        # We launch a Session
-        # Note: we don't need to initialize/restore anything
-        # There is no Variables in this graph, only hardcoded constants
-        dets,scores,classes = self.session.run([y1,y2,y3], feed_dict={
-            x: [npimg]
-        })
-
-
-        return dets[0], scores[0]
+        return 'detector_%s' % self.specific_model
 
     def detect(self, npimg):
-        dets, scores = self.evaluate(npimg)
+        dets, scores, classes = self.session.run([self.tensor_boxes, self.tensor_score, self.tensor_class], feed_dict={
+            self.tensor_image: [npimg]
+        })
+        dets, scores = dets[0], scores[0]
         height, width, channels = npimg.shape
 
         faces = []
         for det, score in zip(dets, scores):
-            if score < DeepFaceConfs.get()['detector']['ssd']['score_th']:
+            if score < DeepFaceConfs.get()['detector'][self.specific_model]['score_th']:
                 continue
-
-
 
             y = int(max(det[0], 0) * height)
             x = int(max(det[1], 0) * width)
@@ -97,9 +74,8 @@ class FaceDetectorSsd(FaceDetector):
 
             bbox = BoundingBox(x, y, w, h, score)
 
-            rect = dlib.rectangle(left=x,top=y,right=x+w,bottom=y+h)
-
             # find landmark
+            rect = dlib.rectangle(left=x, top=y, right=x + w, bottom=y + h)
             shape = self.predictor(npimg, rect)
             coords = np.zeros((68, 2), dtype=np.int)
 
@@ -113,7 +89,9 @@ class FaceDetectorSsd(FaceDetector):
 
         faces = sorted(faces, key=lambda x: x.score, reverse=True)
 
-
-
         return faces
 
+
+class FaceDetectorSSDMobilenetV2(FaceDetectorSSD):
+    def __init__(self):
+        super().__init__('ssd_mobilenet_v2')

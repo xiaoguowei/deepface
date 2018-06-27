@@ -3,9 +3,9 @@ detector:
     scale: 1
     score_th: 0.0
     landmark_detector: dlib/shape_predictor_68_face_landmarks.dat
-  ssd:
+  ssd_mobilenet_v2:
     score_th: 0.5
-    frozen_graph: ssd/frozen_inference_graph.pb
+    frozen_graph: ssd/graph_mobilenet_v2_fddb_180627.pb
 
 roi:
   crop_y_ratio: 0.536
