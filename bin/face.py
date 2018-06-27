@@ -178,7 +178,7 @@ class DeepFace:
         with open('db.pkl', 'wb') as f:
             pickle.dump(features, f, protocol=2)
 
-    def test_lfw(self, set='test', model='baseline_resnet', visualize=True):
+    def test_lfw(self, set='test', model='ssdm_resnet', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
         else:
@@ -198,12 +198,17 @@ class DeepFace:
             else:
                 logger.warning('line should have 3 or 4 elements, line=%s' % line)
 
+        detec = FaceDetectorDlib.NAME
         if model == 'baseline':
             recog = FaceRecognizerVGG.NAME
             just_name = 'vgg'
         elif model == 'baseline_resnet':
             recog = FaceRecognizerResnet.NAME
             just_name = 'resnet'
+        elif model == 'ssdm_resnet':
+            recog = FaceRecognizerResnet.NAME
+            just_name = 'resnet'
+            detec = 'detector_ssd_mobilenet_v2'
         else:
             raise Exception('invalid model name=%s' % model)
 
@@ -220,8 +225,8 @@ class DeepFace:
             if img2 is None:
                 logger.warning('image not read, path=%s' % img2_path)
 
-            result1 = self.run(image=img1, recognizer=recog, visualize=False)
-            result2 = self.run(image=img2, recognizer=recog, visualize=False)
+            result1 = self.run(image=img1, detector=detec, recognizer=recog, visualize=False)
+            result2 = self.run(image=img2, detector=detec, recognizer=recog, visualize=False)
 
             if len(result1) == 0:
                 logger.warning('face not detected, name=%s(%d)! %s(%d)' % (name1, idx1, name2, idx2))
