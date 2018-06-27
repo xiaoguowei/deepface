@@ -6,6 +6,10 @@ Deep Learning Models for Face Detection/Recognition/Alignments, implemented in T
 
 It is being implemented...
 
+## Main Contributers
+
+@ildoonet [@kimdwkimdw](https://github.com/kimdwkimdw) [@hahahahannie](https://github.com/hahahahannie) [@jaehobang](https://github.com/jaehobang)
+
 ## Models
 
 ### Baseline
@@ -15,17 +19,21 @@ A baseline model use dlib face detection module to crop rois. Then they will be 
 - dlib face detection
 - dlib face alignment
 - VGGFace face recognition
+- SSD Face Detection
+  - Mobilenet V2
+  - Training : https://github.com/ildoonet/deepface/tree/train/detector
 
 ## Experiments
 
 ### LFW Dataset
 
-| Model                                 | Set        | 1-EER      |
-|---------------------------------------|------------|------------|
-| VGG(Paper, No Embedding, Trained)     | Test       | 0.9673     |
-| VGG(Paper, Embedding, Trained)        | Test       | 0.9913     |
-|                                       |            |            |
-| VGG(no embedding, no training on lfw) | Test       | 0.9400     |
+| Model                                 | Set        | 1-EER      | Accuracy |
+|---------------------------------------|------------|------------|----------|
+| VGG(Paper, No Embedding, Trained)     | Test       | 0.9673     |          |
+| VGG(Paper, Embedding, Trained)        | Test       | 0.9913     |          |
+|                                       |            |            |          |
+| VGG(no embedding, no training on lfw) | Test       | 0.9400     | 0.936    |
+| VGG2-Resnet(no training on lfw)       | Test       | 0.9680     | 0.949    |
 
 ## Install
 
@@ -42,6 +50,8 @@ $ cd detectors/dlib
 $ bash download.sh
 $ cd ../../recognizers/vggface/
 $ bash download.sh
+$ cd ../resnet/
+$ bash download.sh
 ```
 
 ## Run
@@ -49,13 +59,13 @@ $ bash download.sh
 ### Test on samples
 
 ```bash
-$ python3 deepface.py save_and_run --path=./samples/faces
+$ python bin/run_example.py run --source_path=./samples/faces --db_path=./sample_db.pkl --img_path=./samples/blackpink/blackpink1.jpg --method=vgg2
 ```
 
 ### Test on a image
 
 ```bash
-$ python3 deepface.py run --visualize=true --image=./samples/blackpink/blackpink1.jpg
+$ python bin/face.py run --visualize=true --image=./samples/blackpink/blackpink1.jpg
 ```
 
 ## Reference
@@ -70,30 +80,10 @@ $ python3 deepface.py run --visualize=true --image=./samples/blackpink/blackpink
 
 [4] Dlib Guide Blog : https://www.pyimagesearch.com/2017/04/03/facial-landmarks-dlib-opencv-python/
 
+[5] VGG Face 2 Project : https://www.robots.ox.ac.uk/~vgg/data/vgg_face2/
+
+[6] Kera VGG Face2 : https://github.com/rcmalli/keras-vggface
+
 ### Datasets
 
 [1] LFW : http://vis-www.cs.umass.edu/lfw/
-
-### Improvements
-- SSD face dection adapter implementation
-
-#### How To Prepare your SSD model
-```bash
-1. Put your 'frozen' (.pb) ssd model inside detectors/ssd directory
-2. Change your Detection Model to SSD inside deepface.py run()
-
-Note: Sample SSD model can be downloaded here: https://drive.google.com/open?id=1t9YzkfjHf6NIt5UHcebFM1y0EqO98JQc
-```
-#### Testing the SSD Model Performance with webcam
-Simple testing script to test SSD performance
-```bash
-$ python test_scripts.py
-```
-
-#### Current Problems
-
-![blackpink with deepface(ssd model)](./etc/current_status.jpg)
-- The dlib face feature extraction does not work well with big boxes
-- ssd model does not detect well when given small faces (need to retrain)
-
-

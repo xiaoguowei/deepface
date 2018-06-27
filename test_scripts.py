@@ -1,9 +1,7 @@
 import os
 import cv2
-import numpy as np
 
-
-from detectors.detector_ssd import FaceDetectorSSDMobilenetV2
+from deepface.detectors.detector_ssd import FaceDetectorSSDMobilenetV2
 
 
 def test_ssd():
