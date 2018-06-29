@@ -4,24 +4,24 @@ import fire
 import tensorflow as tf
 
 from resnet_train.model_fn import resnet_model_fn
-from resnet_train.process_data import read_tfrecord_vggface2
+from resnet_train.process_data import read_jpg_vggface2
 
 
 class ResNetRunner:
     def __init__(self):
         self.classifier = tf.estimator.Estimator(
-            model_fn=resnet_model_fn, model_dir='/tmp/resnet_model')
+            model_fn=resnet_model_fn, model_dir='/data/public/rw/workspace-annie/resnet-model')
 
         self.tensors_to_log = {'probabilities': 'softmax_tensor'}
         self.logging_hook = tf.train.LoggingTensorHook(
-            tensors=self.tensors_to_log, every_n_iter=100)
+            tensors=self.tensors_to_log, every_n_iter=10)
 
-    def train(self, batch_size=100, num_epochs=None, steps=20000):
+    def train(self, batch_size=128, num_epochs=None, steps=2000):
         self.classifier.train(
-            input_fn=lambda: read_tfrecord_vggface2('train.tfrecord',
-                                                    num_epochs=num_epochs,
-                                                    shuffle=True,
-                                                    batch_size=batch_size),
+            input_fn=lambda: read_jpg_vggface2('test',
+                                               num_epochs=num_epochs,
+                                               shuffle=True,
+                                               batch_size=batch_size),
             steps=steps,
             hooks=[self.logging_hook]
         )
@@ -29,7 +29,7 @@ class ResNetRunner:
 
     def evaluate(self, num_epochs=1):
         eval_results = self.classifier.evaluate(
-            input_fn=lambda: read_tfrecord_vggface2('test.tfrecord', num_epochs=num_epochs))
+            input_fn=lambda: read_jpg_vggface2('test', num_epochs=num_epochs))
         print(eval_results)
         return
 
