@@ -1,5 +1,3 @@
-# TODO: Think about how to map and store index to indentities
-# TODO: Read the VGGFace2 paper and implement how they trained/tested
 from __future__ import absolute_import
 
 import glob
@@ -48,8 +46,9 @@ def _make_write_tfexample(filepath, metadata, writer):
             'image/encoded': _bytes_feature(tf.compat.as_bytes(imgstr))
         }))
         writer.write(example.SerializeToString())
-    except:
+    except Exception as e:
         print('There was an error detecting face.')
+        print("Exception in {}".format(str(e)))
         pass
 
 
@@ -106,7 +105,7 @@ def gen_tfrecord_vggface2(num_shards=1024):
     writer.close()
 
 
-def _parse(example):
+def _parse_example(example):
     """Helper for parsing an example protocol and returning a (features, label) pair"""
 
     features = {'image/class/index': tf.FixedLenFeature([], tf.int64),
@@ -119,6 +118,14 @@ def _parse(example):
     image = tf.image.convert_image_dtype(image_resized, tf.float32)
 
     return image, parsed_features['image/class/index']
+
+
+def _parse_image(filename, label):
+    image_string = tf.read_file(filename)
+    image_decoded = tf.image.decode_image(image_string)
+    image_resized = tf.image.resize_image_with_crop_or_pad(image_decoded, 224, 224)
+    image = tf.image.convert_image_dtype(image_resized, tf.float32)
+    return image, label
 
 
 def _normalize(image, label):
@@ -146,7 +153,46 @@ def read_tfrecord_vggface2(filename,
     dataset = tf.data.TFRecordDataset(filepath)
 
     # Preprocessing data
-    dataset = dataset.map(_parse)
+    dataset = dataset.map(_parse_example)
+    dataset = dataset.map(_normalize)
+    dataset = dataset.map(_augment)
+
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size)
+    dataset = dataset.repeat(num_epochs)
+    dataset = dataset.batch(batch_size)
+
+    iterator = dataset.make_one_shot_iterator()
+
+    return iterator.get_next()
+
+
+def read_jpg_vggface2(__data,
+                      __path='/data/public/rw/datasets/faces/vggface2',
+                      buffer_size=1000,
+                      num_epochs=None,
+                      shuffle=False,
+                      batch_size=32):
+    datapath = os.path.join(__path, __data, '*/*.jpg')
+    filelist = glob.glob(datapath)
+
+    labelpath = os.path.join(__path, __data, '*')
+    labelist = glob.glob(labelpath)
+
+    # TODO: map index to class_id and identity
+    labels = []
+    for file in filelist:
+        label_txt = os.path.join(os.path.join(__path, __data), os.path.basename(os.path.dirname(file)))
+        labels.append(labelist.index(label_txt))
+
+    filelist = tf.constant(filelist)
+    labels = tf.constant(labels)
+    dataset = tf.data.Dataset.from_tensor_slices((filelist, labels))
+
+    # TODO: implement sharding
+    # dataset = dataset.shard()
+
+    dataset = dataset.map(_parse_image)
     dataset = dataset.map(_normalize)
     dataset = dataset.map(_augment)
 

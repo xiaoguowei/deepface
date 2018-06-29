@@ -109,6 +109,8 @@ def resnet_model_fn(features, labels, mode):
     if mode == tf.estimator.ModeKeys.TRAIN:
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+        tf.summary.scalar('my_accuracy', tf.metrics.accuracy(labels=labels,
+                                                             predictions=predictions["classes"])[1])
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     # Add evaluation metrics
