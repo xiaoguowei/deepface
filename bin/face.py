@@ -101,7 +101,7 @@ class DeepFace:
 
         if len(rois) > 0:
             logger.debug('run face recognition+')
-            result = self.recognizer.detect(rois=rois)
+            result = self.recognizer.detect(rois=rois, faces=faces)
             logger.debug('run face recognition-')
             for face_idx, face in enumerate(faces):
                 face.face_feature = result['feature'][face_idx]

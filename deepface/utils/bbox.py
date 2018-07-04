@@ -9,7 +9,7 @@ class BoundingBox:
         self.score = score
 
         self.face_name = ''
-        self.face_score = ''
+        self.face_score = 0.0
         self.face_feature = None
         self.face_landmark = None
         self.face_roi = None

@@ -219,9 +219,12 @@ class FaceRecognizerResnet(FaceRecognizer):
                                  faces=faces,
                                  roi_mode=FaceRecognizerResnet.NAME)
 
-        new_rois = []
         if rois:
             new_rois = self.get_new_rois(rois=rois)
+            for face, roi in zip(faces, new_rois):
+                face.face_roi = roi
+        else:
+            return np.array([]), np.array([])
 
         probs = []
         feats = []
