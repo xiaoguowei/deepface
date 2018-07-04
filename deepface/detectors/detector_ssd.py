@@ -94,9 +94,9 @@ class FaceDetectorSSD(FaceDetector):
 
 class FaceDetectorSSDInceptionV2(FaceDetectorSSD):
     def __init__(self):
-        super().__init__('ssd_inception_v2')
+        super(FaceDetectorSSDInceptionV2, self).__init__('ssd_inception_v2')
 
 
 class FaceDetectorSSDMobilenetV2(FaceDetectorSSD):
     def __init__(self):
-        super().__init__('ssd_mobilenet_v2')
+        super(FaceDetectorSSDMobilenetV2, self).__init__('ssd_mobilenet_v2')
