@@ -6,7 +6,7 @@ import os
 import subprocess
 import setuptools
 
-_VERSION = '0.1.0'
+_VERSION = '0.1.1'
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 subprocess.check_output(["bash", "deepface/detectors/dlib/download.sh"], cwd=cwd)
