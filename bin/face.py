@@ -18,6 +18,7 @@ base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from deepface.confs.conf import DeepFaceConfs
 from deepface.detectors.detector_dlib import FaceDetectorDlib
+from deepface.detectors.detector_ssd import FaceDetectorSSDMobilenetV2, FaceDetectorSSDInceptionV2
 from deepface.recognizers.recognizer_vgg import FaceRecognizerVGG
 from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
 from deepface.utils.common import get_roi, feat_distance_l2, feat_distance_cosine
@@ -44,6 +45,10 @@ class DeepFace:
         logger.debug('set_detector old=%s new=%s' % (self.detector, detector))
         if detector == FaceDetectorDlib.NAME:
             self.detector = FaceDetectorDlib()
+        elif detector == 'detector_ssd_inception_v2':
+            self.detector = FaceDetectorSSDInceptionV2()
+        elif detector == 'detector_ssd_mobilenet_v2':
+            self.detector = FaceDetectorSSDMobilenetV2()
 
     def set_recognizer(self, recognizer):
         if self.recognizer is not None and self.recognizer.name() == recognizer:
@@ -108,7 +113,7 @@ class DeepFace:
                 face.face_score = score
         return faces
 
-    def run(self, detector=FaceDetectorDlib.NAME, recognizer=FaceRecognizerResnet.NAME, image='./samples/face-recog/samples/kakaobrain.jpg',
+    def run(self, detector='detector_ssd_mobilenet_v2', recognizer=FaceRecognizerResnet.NAME, image='./samples/blackpink/blackpink1.jpg',
             visualize=False):
         self.set_detector(detector)
         self.set_recognizer(recognizer)
@@ -130,7 +135,8 @@ class DeepFace:
 
         logger.debug('run face detection+ %dx%d' % (npimg.shape[1], npimg.shape[0]))
         faces = self.detector.detect(npimg)
-        logger.debug('run face detection- %s' % type(faces))
+
+        logger.debug('run face detection- %s' % len(faces))
 
         if recognizer:
             faces = self.run_recognizer(npimg, faces, recognizer)
@@ -172,7 +178,7 @@ class DeepFace:
         with open('db.pkl', 'wb') as f:
             pickle.dump(features, f, protocol=2)
 
-    def test_lfw(self, set='test', model='baseline_resnet', visualize=True):
+    def test_lfw(self, set='test', model='ssdm_resnet', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
         else:
@@ -192,12 +198,17 @@ class DeepFace:
             else:
                 logger.warning('line should have 3 or 4 elements, line=%s' % line)
 
+        detec = FaceDetectorDlib.NAME
         if model == 'baseline':
             recog = FaceRecognizerVGG.NAME
             just_name = 'vgg'
         elif model == 'baseline_resnet':
             recog = FaceRecognizerResnet.NAME
             just_name = 'resnet'
+        elif model == 'ssdm_resnet':
+            recog = FaceRecognizerResnet.NAME
+            just_name = 'resnet'
+            detec = 'detector_ssd_mobilenet_v2'
         else:
             raise Exception('invalid model name=%s' % model)
 
@@ -214,8 +225,8 @@ class DeepFace:
             if img2 is None:
                 logger.warning('image not read, path=%s' % img2_path)
 
-            result1 = self.run(image=img1, recognizer=recog, visualize=False)
-            result2 = self.run(image=img2, recognizer=recog, visualize=False)
+            result1 = self.run(image=img1, detector=detec, recognizer=recog, visualize=False)
+            result2 = self.run(image=img2, detector=detec, recognizer=recog, visualize=False)
 
             if len(result1) == 0:
                 logger.warning('face not detected, name=%s(%d)! %s(%d)' % (name1, idx1, name2, idx2))

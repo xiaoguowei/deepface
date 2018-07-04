@@ -10,6 +10,7 @@ _VERSION = '0.1.0'
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 subprocess.check_output(["bash", "deepface/detectors/dlib/download.sh"], cwd=cwd)
+subprocess.check_output(["bash", "deepface/detectors/ssd/download.sh"], cwd=cwd)
 subprocess.check_output(["bash", "deepface/recognizers/vggface/download.sh"], cwd=cwd)
 subprocess.check_output(["bash", "deepface/recognizers/vggface2_resnet/download.sh"], cwd=cwd)
 

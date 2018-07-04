@@ -3,6 +3,12 @@ detector:
     scale: 1
     score_th: 0.0
     landmark_detector: dlib/shape_predictor_68_face_landmarks.dat
+  ssd_inception_v2:
+    score_th: 0.5
+    frozen_graph: ssd/graph_inception_v2_fddb.pb
+  ssd_mobilenet_v2:
+    score_th: 0.2 # TODO?
+    frozen_graph: ssd/graph_mobilenet_v2_all_180627.pb
 
 roi:
   recognizer_vgg:
@@ -11,7 +17,6 @@ roi:
   recognizer_resnet:
     crop_y_ratio: 0.5
     size_ratio: 1.35
-
 
 recognizer:
   topk: 5

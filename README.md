@@ -8,7 +8,7 @@ It is being implemented...
 
 ## Main Contributers
 
-@ildoonet @hahahahannie
+@ildoonet [@kimdwkimdw](https://github.com/kimdwkimdw) [@hahahahannie](https://github.com/hahahahannie) [@jaehobang](https://github.com/jaehobang)
 
 ## Models
 
@@ -19,18 +19,22 @@ A baseline model use dlib face detection module to crop rois. Then they will be 
 - dlib face detection
 - dlib face alignment
 - VGGFace face recognition
+- SSD Face Detection
+  - Mobilenet V2
+  - Training : https://github.com/ildoonet/deepface/tree/train/detector
 
 ## Experiments
 
 ### LFW Dataset
 
-| Model                                 | Set        | 1-EER      | Accuracy |
-|---------------------------------------|------------|------------|----------|
-| VGG(Paper, No Embedding, Trained)     | Test       | 0.9673     |          |
-| VGG(Paper, Embedding, Trained)        | Test       | 0.9913     |          |
-|                                       |            |            |          |
-| VGG(no embedding, no training on lfw) | Test       | 0.9400     | 0.936    |
-| VGG2-Resnet(no training on lfw)       | Test       | 0.9680     | 0.949    |
+| Detector | Recognition Model | Description                    | Set        | 1-EER      | Accuracy |
+|----------|-------------------|--------------------------------|------------|------------|----------|
+|          | VGG               | Paper, No Embedding, Trained   | Test       | 0.9673     |          |
+|          | VGG               | Paper, Embedding, Trained      | Test       | 0.9913     |          |
+|          |                   |                                |            |            |          |
+| dlib     | VGG               | no embedding, no training on lfw | Test       | 0.9400     | 0.936    |
+| dlib     | VGG2-Resnet       | no training on lfw             | Test       | 0.9680     | 0.949    |
+| SSD<br/>Mobilenet-v2 | VGG2-Resnet       | no training on lfw              | Test       | 0.990     | 0.973    |
 
 ## Install
 
