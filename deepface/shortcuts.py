@@ -6,11 +6,12 @@ from tqdm import tqdm
 
 from deepface.confs.conf import DeepFaceConfs
 from deepface.detectors.detector_dlib import FaceDetectorDlib
+from deepface.detectors.detector_ssd import FaceDetectorSSDInceptionV2, FaceDetectorSSDMobilenetV2
 from deepface.recognizers.recognizer_vgg import FaceRecognizerVGG
 from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
 
 
-def get_detector(name='dlib'):
+def get_detector(name='ssd_mobilenet_v2'):
     """
 
     :type name: str
@@ -20,6 +21,10 @@ def get_detector(name='dlib'):
 
     if name == 'dlib':
         return FaceDetectorDlib()
+    elif name == 'ssd_inception_v2':
+        return FaceDetectorSSDInceptionV2()
+    elif name == 'ssd_mobilenet_v2':
+        return FaceDetectorSSDMobilenetV2()
 
     return None
 
