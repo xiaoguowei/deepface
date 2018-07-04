@@ -219,13 +219,13 @@ class FaceRecognizerResnet(FaceRecognizer):
                                  faces=faces,
                                  roi_mode=FaceRecognizerResnet.NAME)
 
+        new_rois = []
         if rois:
             new_rois = self.get_new_rois(rois=rois)
 
         probs = []
         feats = []
-        for roi_chunk in grouper(new_rois, self.batch_size,
-                                 fillvalue=np.zeros((224, 224, 3), dtype=np.uint8)):
+        for roi_chunk in grouper(new_rois, self.batch_size, fillvalue=np.zeros((224, 224, 3), dtype=np.uint8)):
             prob, feat = self.persistent_sess.run([self.network['out'], self.network['feat']],
                                                   feed_dict={self.input_node: roi_chunk})
             feat = [np.squeeze(x) for x in feat]
