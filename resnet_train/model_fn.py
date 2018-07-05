@@ -1,4 +1,10 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
+
+LEARNING_RATE = 1e-4
 
 
 def conv_block(input_tensor, filters, stage, block, mode, strides=(2, 2), bias=False):
@@ -95,7 +101,7 @@ def resnet_model_fn(features, labels, mode):
 
     # Predictions
     predictions = {
-        "classes": tf.argmax(logits, axis=1),
+        "classes": tf.argmax(logits, axis=1, name='prediction_tensor'),
         "probabilities": tf.nn.softmax(logits, name='softmax_tensor')
     }
 
@@ -104,19 +110,20 @@ def resnet_model_fn(features, labels, mode):
 
     # Calculate Loss
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
+
+    # Logging tensor hook
+    tf.identity(LEARNING_RATE, 'learning_rate')
+    tf.identity(loss, 'cross_entropy')
+    tf.identity(accuracy[1], name='train_accuracy')
 
     # Configure the Training Op
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
-        tf.summary.scalar('my_accuracy', tf.metrics.accuracy(labels=labels,
-                                                             predictions=predictions["classes"])[1])
+        tf.summary.scalar('train_accuracy', accuracy[1])
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     # Add evaluation metrics
-    eval_metric_ops = {
-        "accuracy": tf.metrics.accuracy(labels=labels,
-                                        predictions=predictions["classes"])
-    }
-
+    eval_metric_ops = {"accuracy": accuracy}
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
