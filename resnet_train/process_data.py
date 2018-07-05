@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import glob
 import os
@@ -6,6 +8,11 @@ import csv
 
 import cv2
 import tensorflow as tf
+
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 from deepface.utils.common import get_roi
 from deepface.detectors.detector_dlib import FaceDetectorDlib
@@ -57,12 +64,12 @@ def gen_tfrecord_vggface2(num_shards=1024):
         TODO: implement sharding
     """
 
-    # __path = '/data/public/rw/datasets/faces/vggface2'
-    __path = '/data/private/dataset/minidemo'  # for testing purpose
+    __path = '/data/public/rw/datasets/faces/vggface2'
+    # __path = '/data/private/dataset/minidemo'  # for testing purpose
     __train = 'train'
     __test = 'test'
-    # __meta = 'meta/identity_meta.csv'
-    __meta = '../meta/identity_meta.csv'  # for testing purpose
+    __meta = 'meta/identity_meta.csv'
+    # __meta = '../meta/identity_meta.csv'  # for testing purpose
     __output_train = 'train.tfrecord'
     __output_test = 'test.tfrecord'
 
@@ -89,8 +96,12 @@ def gen_tfrecord_vggface2(num_shards=1024):
     trainpath = os.path.join(__path, __train, '*/*.jpg')
     filelist = glob.glob(trainpath)
 
+    count = 0
     for filepath in filelist:
         _make_write_tfexample(filepath, metadata, writer)
+        if count % 500 == 0:
+            print("%d of %d completed" % (count, len(filelist)))
+        count += 1
     writer.close()
 
     # Make *test* record file
@@ -99,9 +110,12 @@ def gen_tfrecord_vggface2(num_shards=1024):
 
     testpath = os.path.join(__path, __test, '*/*.jpg')
     filelist = glob.glob(testpath)
-
+    count = 0
     for filepath in filelist:
         _make_write_tfexample(filepath, metadata, writer)
+        if count % 1000 == 0:
+            print("%d of %d completed" % (count, len(filelist)))
+        count += 1
     writer.close()
 
 
@@ -123,14 +137,17 @@ def _parse_example(example):
 def _parse_image(filename, label):
     image_string = tf.read_file(filename)
     image_decoded = tf.image.decode_image(image_string)
+
     image_resized = tf.image.resize_image_with_crop_or_pad(image_decoded, 224, 224)
     image = tf.image.convert_image_dtype(image_resized, tf.float32)
     return image, label
 
 
-def _normalize(image, label):
-    """Helper for normalizing input data"""
-    return image, label
+def _batch_normalize(tensor_in, label, epsilon=0.0001):
+    """Helper for applying batch normalization on input tensor"""
+    mean, variance = tf.nn.moments(tensor_in, axes=[0])
+    tensor_out = (tensor_in - mean) / (variance + epsilon)
+    return tensor_out, label
 
 
 def _augment(image, label):
@@ -154,7 +171,6 @@ def read_tfrecord_vggface2(filename,
 
     # Preprocessing data
     dataset = dataset.map(_parse_example)
-    dataset = dataset.map(_normalize)
     dataset = dataset.map(_augment)
 
     if shuffle:
@@ -168,38 +184,60 @@ def read_tfrecord_vggface2(filename,
 
 
 def read_jpg_vggface2(__data,
-                      __path='/data/public/rw/datasets/faces/vggface2',
-                      buffer_size=1000,
+                      __path='/data/public/rw/datasets/faces/vggface2_cropped',
+                      buffer_size=500,
                       num_epochs=None,
                       shuffle=False,
-                      batch_size=32):
-    datapath = os.path.join(__path, __data, '*/*.jpg')
-    filelist = glob.glob(datapath)
+                      batch_size=128,
+                      prefetch_buffer_size=500,
+                      cache_path='/data/private/deepface/resnet_train/data_crop3.pkl'
 
-    labelpath = os.path.join(__path, __data, '*')
-    labelist = glob.glob(labelpath)
+                      ):
+    if os.path.exists(cache_path):
+        with open(cache_path, 'rb') as f:
+            d = pickle.load(f)
 
-    # TODO: map index to class_id and identity
-    labels = []
-    for file in filelist:
-        label_txt = os.path.join(os.path.join(__path, __data), os.path.basename(os.path.dirname(file)))
-        labels.append(labelist.index(label_txt))
+        filelist = d['filelist']
+        labels = d['labels']
+
+        from resnet_train.train_and_evaluate import logger
+        logger.info('Cache file loaded from (%s)' % cache_path)
+
+    else:
+        from resnet_train.train_and_evaluate import logger
+        logger.info('Loading all the datafiles..')
+
+        datapath = os.path.join(__path, __data, '*/*.jpg')
+        filelist = glob.glob(datapath)
+        labelpath = os.path.join(__path, __data, '*')
+        labelist = glob.glob(labelpath)
+
+        logger.info('Mapping all the class_id\'s to indices..')
+        labels = []
+        for file in filelist:
+            label_txt = os.path.join(__path, __data, os.path.basename(os.path.dirname(file)))
+            labels.append(labelist.index(label_txt))
+
+        with open(cache_path, 'wb') as f:
+            pickle.dump({
+                'filelist': filelist,
+                'labels': labels
+            }, f, protocol=2)
+        logger.info('Mapping completed.')
 
     filelist = tf.constant(filelist)
     labels = tf.constant(labels)
     dataset = tf.data.Dataset.from_tensor_slices((filelist, labels))
 
-    # TODO: implement sharding
-    # dataset = dataset.shard()
-
-    dataset = dataset.map(_parse_image)
-    dataset = dataset.map(_normalize)
-    dataset = dataset.map(_augment)
-
+    dataset = dataset.map(_parse_image, num_parallel_calls=10)
+    dataset.repeat = dataset.repeat(num_epochs)
     if shuffle:
         dataset = dataset.shuffle(buffer_size)
-    dataset = dataset.repeat(num_epochs)
     dataset = dataset.batch(batch_size)
+    dataset = dataset.map(_batch_normalize, num_parallel_calls=10)
+
+    # This one liner parallelizes input pipeline
+    # dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
 
     iterator = dataset.make_one_shot_iterator()
 
