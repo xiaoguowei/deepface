@@ -105,3 +105,4 @@ venv.bak/
 *.dat
 *.bz2
 result.jpg
+deepface/detectors/ssd/graph_inception_v2_fddb.pb

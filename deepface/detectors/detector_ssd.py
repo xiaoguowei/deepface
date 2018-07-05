@@ -33,7 +33,9 @@ class FaceDetectorSSD(FaceDetector):
             DeepFaceConfs.get()['detector']['dlib']['landmark_detector']
         )
         self.predictor = dlib.shape_predictor(predictor_path)
-        self.session = tf.Session(graph=self.detector)
+
+        config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+        self.session = tf.Session(graph=self.detector, config=config)
 
     def _load_graph(self, graph_path):
         # We load the protobuf file from the disk and parse it to retrieve the
