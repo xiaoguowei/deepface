@@ -55,11 +55,12 @@ class FaceDetectorSSD(FaceDetector):
         return 'detector_%s' % self.specific_model
 
     def detect(self, npimg):
+        height, width = npimg.shape[:2]
+        infer_img = cv2.resize(npimg, (480, 320), cv2.INTER_AREA)   # TODO : Resize or not?
         dets, scores, classes = self.session.run([self.tensor_boxes, self.tensor_score, self.tensor_class], feed_dict={
-            self.tensor_image: [npimg]
+            self.tensor_image: [infer_img]
         })
         dets, scores = dets[0], scores[0]
-        height, width, channels = npimg.shape
 
         faces = []
         for det, score in zip(dets, scores):
