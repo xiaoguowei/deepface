@@ -10,6 +10,12 @@ extract_download_url() {
 
 }
 
-wget -c --tries=2 $( extract_download_url http://www.mediafire.com/file/j8aqfjojwl29c5m/weight.mat/file ) -O $DIR/weight.mat
-echo "[download] end"
-#rm $DIR/shape_predictor_68_face_landmarks.dat.bz2
+extract_filename() {
+        echo "$DIR/${1##*/}"
+}
+
+download_mediafire() {
+        curl -L -o $( extract_filename $1 ) -C - $( extract_download_url $1 )
+}
+
+$( download_mediafire http://www.mediafire.com/file/j8aqfjojwl29c5m/weight.mat)

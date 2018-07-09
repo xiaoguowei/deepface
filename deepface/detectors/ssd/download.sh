@@ -1,6 +1,7 @@
 echo "download model graph : Detectors"
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
+
 extract_download_url() {
 
         url=$( wget -q -O - $1 |  grep -o 'http*://download[^"]*' | tail -n 1 )
@@ -8,5 +9,13 @@ extract_download_url() {
 
 }
 
-wget $( extract_download_url http://www.mediafire.com/file/ivwws1znd4y2v9y/graph_mobilenet_v2_fddb_180627.pb ) -O $DIR/graph_mobilenet_v2_fddb_180627.pb
-wget $( extract_download_url http://www.mediafire.com/file/a04pe6qzlevsso8/graph_mobilenet_v2_all_180627.pb ) -O $DIR/graph_mobilenet_v2_all_180627.pb
+extract_filename() {
+        echo "$DIR/${1##*/}"
+}
+
+download_mediafire() {
+        curl -L -o $( extract_filename $1 ) -C - $( extract_download_url $1 )
+}
+
+$( download_mediafire http://www.mediafire.com/file/ivwws1znd4y2v9y/graph_mobilenet_v2_fddb_180627.pb )
+$( download_mediafire http://www.mediafire.com/file/a04pe6qzlevsso8/graph_mobilenet_v2_all_180627.pb )

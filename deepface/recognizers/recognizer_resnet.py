@@ -1,3 +1,4 @@
+import logging
 import os
 import h5py
 
@@ -178,8 +179,7 @@ class FaceRecognizerResnet(FaceRecognizer):
         init = tf.global_variables_initializer()
 
         config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
-        sess = tf.Session(config=config)
-        self.persistent_sess = sess
+        self.persistent_sess = tf.Session(config=config)
 
         # Warm-up:
         self.persistent_sess.run(init, feed_dict={
@@ -197,8 +197,11 @@ class FaceRecognizerResnet(FaceRecognizer):
         else:
             db_path = DeepFaceConfs.get()['recognizer']['resnet'].get('db', '')
             db_path = os.path.join(dir_path, db_path)
-        with open(db_path, 'rb') as f:
-            self.db = pickle.load(f)
+        try:
+            with open(db_path, 'rb') as f:
+                self.db = pickle.load(f)
+        except Exception as e:
+            logging.warning('db file not loaded, %s, err=%s' % (db_path, str(e)))
 
     def name(self):
         return FaceRecognizerResnet.NAME
