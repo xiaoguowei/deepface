@@ -24,34 +24,40 @@ logger.addHandler(ch)
 
 os.environ['GLOG_logtostderr'] = '1'
 
+
 class ResNetRunner:
     def __init__(self):
-        # tensorflow training logger:
-        tf.logging.set_verbosity(tf.logging.INFO)
-
-        self.classifier = tf.estimator.Estimator(
-            model_fn=resnet_model_fn, model_dir='/data/public/rw/workspace-annie/resnet-model8')
-
+        self.estimator = tf.estimator.Estimator(
+            model_fn=resnet_model_fn,
+            model_dir='/data/public/rw/workspace-annie/adam_l2loss'
+        )
         logger.info('Custom estimator has been created.')
 
-        self.tensors_to_log = {'probabilities': 'softmax_tensor', 'predictions': 'prediction_tensor'}
+        # tensorflow training logger:
+        tf.logging.set_verbosity(tf.logging.INFO)
+        self.tensors_to_log = {'probabilities': 'softmax_tensor',
+                               'predictions': 'prediction_tensor',
+                               'train_accuracy': 'train_accuracy',
+                               'true_labels': 'true_labels',
+                               'learning_rate': 'learning_rate'}
         self.logging_hook = tf.train.LoggingTensorHook(
-            tensors=self.tensors_to_log, every_n_iter=50)
+            tensors=self.tensors_to_log,
+            every_n_iter=50
+        )
 
-    def train(self, batch_size=128, num_epochs=250, steps=None):
-        logger.info('Starting to train...')
-        self.classifier.train(
+    def train(self, batch_size=256, num_epochs=50, max_steps=600000):
+        self.estimator.train(
             input_fn=lambda: read_jpg_vggface2('train',
                                                num_epochs=num_epochs,
                                                shuffle=True,
                                                batch_size=batch_size),
-            steps=steps,
+            max_steps=max_steps,
             hooks=[self.logging_hook]
         )
         return
 
     def evaluate(self, num_epochs=1):
-        eval_results = self.classifier.evaluate(
+        eval_results = self.estimator.evaluate(
             input_fn=lambda: read_jpg_vggface2('train', num_epochs=num_epochs))
         print(eval_results)
         return
@@ -59,7 +65,7 @@ class ResNetRunner:
     def predict(self):
         # TODO configure input source
         predict_input_fn = tf.estimator.inputs.numpy_input_fn(x={})
-        predict_result = self.classifier.predict(predict_input_fn)
+        predict_result = self.estimator.predict(predict_input_fn)
         print(predict_result)
         return
 

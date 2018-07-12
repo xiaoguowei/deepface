@@ -4,8 +4,9 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-LEARNING_RATE = 1e-4
-
+LEARNING_RATE = 1e-3
+TRAIN_SIZE = 3e6
+WEIGHT_DECAY = 1e-4
 
 def conv_block(input_tensor, filters, stage, block, mode, strides=(2, 2), bias=False):
     """Helper function for building the convolution block"""
@@ -59,7 +60,12 @@ def identity_block(input_tensor, filters, stage, block, mode, bias=False):
 
 def resnet_model_fn(features, labels, mode):
     """Model function for ResNet architecture"""
+    # TODO: fix learning weight decay scheme
     input_layer = tf.reshape(features, [-1, 224, 224, 3])
+
+    # normalize input image:
+    input_layer = tf.divide(input_layer, tf.Variable(128.0, tf.float32))
+    input_layer = tf.subtract(input_layer, tf.Variable(1.0, tf.float32))
 
     # Building hidden layers (ResNet architecture)
     # First block:
@@ -72,6 +78,7 @@ def resnet_model_fn(features, labels, mode):
     l = conv_block(l, [64, 64, 256], stage=2, block=1, mode=mode, strides=(1, 1))
     l = identity_block(l, [64, 64, 256], stage=2, block=2, mode=mode)
     l = identity_block(l, [64, 64, 256], stage=2, block=3, mode=mode)
+    # tf.summary.image('after_second_layer', l)
 
     # Third block:
     l = conv_block(l, [128, 128, 512], stage=3, block=1, mode=mode)
@@ -109,19 +116,28 @@ def resnet_model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
     # Calculate Loss
-    loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+    l2_loss = WEIGHT_DECAY * tf.add_n([tf.nn.l2_loss(tf.cast(v, tf.float32)) for v in tf.trainable_variables()])
+    loss = cross_entropy + l2_loss
+
     accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
 
+    # Exponential decay learning rate:
+    learning_rate = tf.train.exponential_decay(0.1, tf.train.get_global_step(), 500, 0.99)
+
     # Logging tensor hook
-    tf.identity(LEARNING_RATE, 'learning_rate')
+    tf.identity(learning_rate, 'learning_rate')
     tf.identity(loss, 'cross_entropy')
     tf.identity(accuracy[1], name='train_accuracy')
+    tf.identity(labels, 'true_labels')
+    tf.summary.scalar('learning_rate', learning_rate)
+    tf.summary.scalar('accuracy', accuracy[1])
 
     # Configure the Training Op
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
+        # optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
-        tf.summary.scalar('train_accuracy', accuracy[1])
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     # Add evaluation metrics

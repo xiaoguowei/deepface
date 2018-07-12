@@ -136,11 +136,10 @@ def _parse_example(example):
 
 def _parse_image(filename, label):
     image_string = tf.read_file(filename)
-    image_decoded = tf.image.decode_image(image_string)
-
-    image_resized = tf.image.resize_image_with_crop_or_pad(image_decoded, 224, 224)
-    image = tf.image.convert_image_dtype(image_resized, tf.float32)
-    return image, label
+    image_decoded = tf.image.decode_jpeg(image_string, channels=3)
+    image = tf.cast(image_decoded, tf.float32)
+    image_resized = tf.image.resize_images(image, [224, 224])
+    return image_resized, label
 
 
 def _batch_normalize(tensor_in, label, epsilon=0.0001):
@@ -152,6 +151,7 @@ def _batch_normalize(tensor_in, label, epsilon=0.0001):
 
 def _augment(image, label):
     """Helper for applying augmentation on an (image, label) pair"""
+    
     return image, label
 
 
@@ -185,14 +185,12 @@ def read_tfrecord_vggface2(filename,
 
 def read_jpg_vggface2(__data,
                       __path='/data/public/rw/datasets/faces/vggface2_cropped',
-                      buffer_size=500,
+                      buffer_size=2000,
                       num_epochs=None,
                       shuffle=False,
                       batch_size=128,
-                      prefetch_buffer_size=500,
-                      cache_path='/data/private/deepface/resnet_train/data_crop3.pkl'
-
-                      ):
+                      prefetch_buffer_size=1,
+                      cache_path='/data/private/deepface/resnet_train/filelist_cropped.pkl'):
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             d = pickle.load(f)
@@ -202,7 +200,6 @@ def read_jpg_vggface2(__data,
 
         from resnet_train.train_and_evaluate import logger
         logger.info('Cache file loaded from (%s)' % cache_path)
-
     else:
         from resnet_train.train_and_evaluate import logger
         logger.info('Loading all the datafiles..')
@@ -224,6 +221,7 @@ def read_jpg_vggface2(__data,
                 'labels': labels
             }, f, protocol=2)
         logger.info('Mapping completed.')
+        logger.info('Starting to train...')
 
     filelist = tf.constant(filelist)
     labels = tf.constant(labels)
@@ -234,10 +232,9 @@ def read_jpg_vggface2(__data,
     if shuffle:
         dataset = dataset.shuffle(buffer_size)
     dataset = dataset.batch(batch_size)
-    dataset = dataset.map(_batch_normalize, num_parallel_calls=10)
 
     # This one liner parallelizes input pipeline
-    # dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
+    dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
 
     iterator = dataset.make_one_shot_iterator()
 
