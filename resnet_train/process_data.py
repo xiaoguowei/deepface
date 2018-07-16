@@ -228,7 +228,7 @@ def read_jpg_vggface2(__data,
     dataset = tf.data.Dataset.from_tensor_slices((filelist, labels))
 
     dataset = dataset.map(_parse_image, num_parallel_calls=10)
-    dataset.repeat = dataset.repeat(num_epochs)
+    dataset = dataset.repeat(num_epochs)
     if shuffle:
         dataset = dataset.shuffle(buffer_size)
     dataset = dataset.batch(batch_size)
