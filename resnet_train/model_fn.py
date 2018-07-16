@@ -123,7 +123,10 @@ def resnet_model_fn(features, labels, mode):
     accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
 
     # Exponential decay learning rate:
-    learning_rate = tf.train.exponential_decay(0.1, tf.train.get_global_step(), 500, 0.99)
+    # learning_rate = tf.train.exponential_decay(0.1, tf.train.get_global_step(), 500, 0.99)
+    # Piecewise constant learning rate:
+    learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [12000, 120000, 240000],
+                                                [0.1, 0.01, 0.001, 0.0001])
 
     # Logging tensor hook
     tf.identity(learning_rate, 'learning_rate')

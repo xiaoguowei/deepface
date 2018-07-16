@@ -151,7 +151,10 @@ def _batch_normalize(tensor_in, label, epsilon=0.0001):
 
 def _augment(image, label):
     """Helper for applying augmentation on an (image, label) pair"""
-    
+    image = tf.image.random_brightness(image, max_delta=0.2)
+    image = tf.image.random_contrast(image, 0.8, 1.2)
+    image = tf.image.random_saturation(image, 0.8, 1.2)
+    image = tf.image.random_flip_left_right(image)
     return image, label
 
 
@@ -228,6 +231,7 @@ def read_jpg_vggface2(__data,
     dataset = tf.data.Dataset.from_tensor_slices((filelist, labels))
 
     dataset = dataset.map(_parse_image, num_parallel_calls=10)
+    dataset = dataset.map(_augment, num_parallel_calls=10)
     dataset = dataset.repeat(num_epochs)
     if shuffle:
         dataset = dataset.shuffle(buffer_size)
