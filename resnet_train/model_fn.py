@@ -139,7 +139,9 @@ def resnet_model_fn(features, labels, mode):
     # Configure the Training Op
     if mode == tf.estimator.ModeKeys.TRAIN:
         # optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        # optimizer = tf.train.AdamOptimizer()
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+        optimizer = tf.contrib.estimator.TowerOptimizer(optimizer)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 

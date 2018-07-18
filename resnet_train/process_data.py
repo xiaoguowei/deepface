@@ -192,7 +192,7 @@ def read_jpg_vggface2(__data,
                       num_epochs=None,
                       shuffle=False,
                       batch_size=128,
-                      prefetch_buffer_size=1,
+                      prefetch_buffer_size=4,
                       cache_path='/data/private/deepface/resnet_train/filelist_cropped.pkl'):
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
@@ -230,8 +230,8 @@ def read_jpg_vggface2(__data,
     labels = tf.constant(labels)
     dataset = tf.data.Dataset.from_tensor_slices((filelist, labels))
 
-    dataset = dataset.map(_parse_image, num_parallel_calls=10)
-    dataset = dataset.map(_augment, num_parallel_calls=10)
+    dataset = dataset.map(_parse_image, num_parallel_calls=40)
+    dataset = dataset.map(_augment, num_parallel_calls=40)
     dataset = dataset.repeat(num_epochs)
     if shuffle:
         dataset = dataset.shuffle(buffer_size)

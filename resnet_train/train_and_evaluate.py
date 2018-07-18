@@ -28,8 +28,10 @@ os.environ['GLOG_logtostderr'] = '1'
 class ResNetRunner:
     def __init__(self):
         self.estimator = tf.estimator.Estimator(
-            model_fn=resnet_model_fn,
-            model_dir='/data/public/rw/workspace-annie/adam_l2loss'
+            # model_fn=resnet_model_fn,
+            # multi gpu setup:
+            model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
+            model_dir='/data/public/rw/workspace-annie/0718_SGD_piecewise_10epoch_multigpu'
         )
         logger.info('Custom estimator has been created.')
 
