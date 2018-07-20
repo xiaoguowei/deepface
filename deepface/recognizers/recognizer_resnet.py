@@ -199,7 +199,9 @@ class FaceRecognizerResnet(FaceRecognizer):
             db_path = os.path.join(dir_path, db_path)
         try:
             with open(db_path, 'rb') as f:
-                self.db = pickle.load(f)
+                u = pickle._Unpickler(f)
+                u.encoding = 'latin1'
+                self.db = u.load()
         except Exception as e:
             logging.warning('db file not loaded, %s, err=%s' % (db_path, str(e)))
 
