@@ -64,6 +64,27 @@ class ResNetRunner:
         print(eval_results)
         return
 
+    def train_and_evaluate(self, batch_size=256, num_epochs=200, max_steps=2400000):
+        train_spec = tf.estimator.TrainSpec(
+            input_fn=lambda: read_jpg_vggface2('train',
+                                               num_epochs=num_epochs,
+                                               shuffle=True,
+                                               batch_size=batch_size),
+            max_steps=max_steps,
+            hooks=[self.logging_hook]
+        )
+        eval_spec = tf.estimator.EvalSpec(
+            input_fn=lambda: read_jpg_vggface2('train',
+                                               num_epochs=1,
+                                               shuffle=False,
+                                               batch_size=batch_size),
+            steps=1000,
+            hooks=[self.logging_hook]
+        )
+        tf.estimator.train_and_evaluate(self.estimator, train_spec, eval_spec)
+
+
+
     def predict(self):
         # TODO configure input source
         predict_input_fn = tf.estimator.inputs.numpy_input_fn(x={})
