@@ -27,27 +27,27 @@ os.environ['GLOG_logtostderr'] = '1'
 
 class ResNetRunner:
     def __init__(self):
+        run_config = tf.estimator.RunConfig(save_checkpoints_steps=1000,
+                                            keep_checkpoint_max=3)
         self.estimator = tf.estimator.Estimator(
-            # model_fn=resnet_model_fn,
             # multi gpu setup:
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
-            model_dir='/data/public/rw/workspace-annie/0718_SGD_piecewise_10epoch_multigpu'
+            model_dir='/data/public/rw/workspace-annie/0722_SGD_after_25_40epochs_learning_rate_0.15',
+            config=run_config
         )
         logger.info('Custom estimator has been created.')
 
         # tensorflow training logger:
         tf.logging.set_verbosity(tf.logging.INFO)
-        self.tensors_to_log = {'probabilities': 'softmax_tensor',
-                               'predictions': 'prediction_tensor',
-                               'train_accuracy': 'train_accuracy',
-                               'true_labels': 'true_labels',
-                               'learning_rate': 'learning_rate'}
+        self.tensors_to_log = {
+            'train_accuracy': 'train_accuracy',
+            'learning_rate': 'learning_rate'}
         self.logging_hook = tf.train.LoggingTensorHook(
             tensors=self.tensors_to_log,
             every_n_iter=50
         )
 
-    def train(self, batch_size=256, num_epochs=50, max_steps=600000):
+    def train(self, batch_size=256, num_epochs=200, max_steps=2400000):
         self.estimator.train(
             input_fn=lambda: read_jpg_vggface2('train',
                                                num_epochs=num_epochs,
@@ -58,9 +58,9 @@ class ResNetRunner:
         )
         return
 
-    def evaluate(self, num_epochs=1):
+    def evaluate(self, batch_size=256, num_epochs=1):
         eval_results = self.estimator.evaluate(
-            input_fn=lambda: read_jpg_vggface2('train', num_epochs=num_epochs))
+            input_fn=lambda: read_jpg_vggface2('train', num_epochs=num_epochs, batch_size=batch_size))
         print(eval_results)
         return
 

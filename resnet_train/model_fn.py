@@ -8,6 +8,7 @@ LEARNING_RATE = 1e-3
 TRAIN_SIZE = 3e6
 WEIGHT_DECAY = 1e-4
 
+
 def conv_block(input_tensor, filters, stage, block, mode, strides=(2, 2), bias=False):
     """Helper function for building the convolution block"""
 
@@ -60,7 +61,6 @@ def identity_block(input_tensor, filters, stage, block, mode, bias=False):
 
 def resnet_model_fn(features, labels, mode):
     """Model function for ResNet architecture"""
-    # TODO: fix learning weight decay scheme
     input_layer = tf.reshape(features, [-1, 224, 224, 3])
 
     # normalize input image:
@@ -115,18 +115,16 @@ def resnet_model_fn(features, labels, mode):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    # Calculate Loss
+    accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
+
+    # Calculate Loss - weight decay of 0.0001
     cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
     l2_loss = WEIGHT_DECAY * tf.add_n([tf.nn.l2_loss(tf.cast(v, tf.float32)) for v in tf.trainable_variables()])
     loss = cross_entropy + l2_loss
 
-    accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
-
-    # Exponential decay learning rate:
-    # learning_rate = tf.train.exponential_decay(0.1, tf.train.get_global_step(), 500, 0.99)
     # Piecewise constant learning rate:
-    learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [12000, 120000, 240000],
-                                                [0.1, 0.01, 0.001, 0.0001])
+    learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [60000, 300000, 480000],
+                                                [0.15, 0.1, 0.01, 0.001])
 
     # Logging tensor hook
     tf.identity(learning_rate, 'learning_rate')
@@ -138,8 +136,6 @@ def resnet_model_fn(features, labels, mode):
 
     # Configure the Training Op
     if mode == tf.estimator.ModeKeys.TRAIN:
-        # optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
-        # optimizer = tf.train.AdamOptimizer()
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
         optimizer = tf.contrib.estimator.TowerOptimizer(optimizer)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
