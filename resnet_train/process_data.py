@@ -235,9 +235,9 @@ def read_jpg_vggface2(__data,
     dataset = dataset.repeat(num_epochs)
     if shuffle:
         dataset = dataset.shuffle(buffer_size)
-    dataset = dataset.batch(batch_size)
+    dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
 
-    # This one liner parallelizes input pipeline
+    # prefetches data for next available GPU
     dataset = dataset.prefetch(buffer_size=prefetch_buffer_size)
 
     iterator = dataset.make_one_shot_iterator()
