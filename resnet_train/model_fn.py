@@ -123,8 +123,8 @@ def resnet_model_fn(features, labels, mode):
     loss = cross_entropy + l2_loss
 
     # Piecewise constant learning rate:
-    learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [60000, 300000, 480000],
-                                                [0.15, 0.1, 0.01, 0.001])
+    learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [120000, 240000, 300000, 480000],
+                                                [0.2, 0.15, 0.1, 0.01, 0.001])
 
     # Logging tensor hook
     tf.identity(learning_rate, 'learning_rate')

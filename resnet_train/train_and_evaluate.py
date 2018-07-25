@@ -32,7 +32,7 @@ class ResNetRunner:
         self.estimator = tf.estimator.Estimator(
             # multi gpu setup:
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
-            model_dir='/data/public/rw/workspace-annie/0722_SGD_after_25_40epochs_learning_rate_0.15',
+            model_dir='/data/public/rw/workspace-annie/0724_SGD_after_10_20_25_40epochs_learning_rate_0.2_noeval',
             config=run_config
         )
         logger.info('Custom estimator has been created.')
@@ -65,6 +65,11 @@ class ResNetRunner:
         return
 
     def train_and_evaluate(self, batch_size=256, num_epochs=200, max_steps=2400000):
+        def eval_metric_fn(predictions, features, labels):
+            return {'auc': tf.metrics.auc(
+                labels, predictions['classes'], weights=features['weight']
+            )}
+        self.estimator = tf.contrib.estimator.add_metrics(self.estimator, eval_metric_fn)
         train_spec = tf.estimator.TrainSpec(
             input_fn=lambda: read_jpg_vggface2('train',
                                                num_epochs=num_epochs,
@@ -82,8 +87,6 @@ class ResNetRunner:
             hooks=[self.logging_hook]
         )
         tf.estimator.train_and_evaluate(self.estimator, train_spec, eval_spec)
-
-
 
     def predict(self):
         # TODO configure input source

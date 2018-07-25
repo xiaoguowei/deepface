@@ -192,7 +192,7 @@ def read_jpg_vggface2(__data,
                       num_epochs=None,
                       shuffle=False,
                       batch_size=128,
-                      prefetch_buffer_size=4,
+                      prefetch_buffer_size=12,
                       cache_path='/data/private/deepface/resnet_train/filelist_cropped.pkl'):
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
