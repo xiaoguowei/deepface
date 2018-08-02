@@ -188,12 +188,13 @@ def read_tfrecord_vggface2(filename,
 
 def read_jpg_vggface2(__data,
                       __path='/data/public/rw/datasets/faces/vggface2_cropped',
-                      buffer_size=2000,
+                      buffer_size=1000,
                       num_epochs=None,
                       shuffle=False,
                       batch_size=128,
-                      prefetch_buffer_size=12,
-                      cache_path='/data/private/deepface/resnet_train/filelist_cropped.pkl'):
+                      prefetch_buffer_size=6,
+                      cache_path='/data/private/deepface/resnet_train/filelist_'):
+    cache_path = cache_path + __data + '.pkl'
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             d = pickle.load(f)

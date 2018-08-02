@@ -30,7 +30,7 @@ class ResNetRunner:
         run_config = tf.estimator.RunConfig(save_checkpoints_steps=1000,
                                             keep_checkpoint_max=3)
         self.estimator = tf.estimator.Estimator(
-            # multi gpu setup:
+            # multi gpu setup (this has been deprecated after tf v1.8):
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
             model_dir='/data/public/rw/workspace-annie/0724_SGD_after_10_20_25_40epochs_learning_rate_0.2_noeval',
             config=run_config
@@ -40,59 +40,99 @@ class ResNetRunner:
         # tensorflow training logger:
         tf.logging.set_verbosity(tf.logging.INFO)
         self.tensors_to_log = {
-            'train_accuracy': 'train_accuracy',
-            'learning_rate': 'learning_rate'}
+            'train_accuracy': 'train_accuracy'
+            # 'predictions': 'prediction_tensor',
+            # 'true_labels': 'true_labels'
+            # 'probabilities': 'softmax_tensor'
+        }
         self.logging_hook = tf.train.LoggingTensorHook(
             tensors=self.tensors_to_log,
             every_n_iter=50
         )
 
-    def train(self, batch_size=256, num_epochs=200, max_steps=2400000):
+    def train(self, batch_size=256, num_epochs=50, max_steps=100000000):
         self.estimator.train(
-            input_fn=lambda: read_jpg_vggface2('train',
-                                               num_epochs=num_epochs,
-                                               shuffle=True,
-                                               batch_size=batch_size),
+            input_fn=lambda: read_jpg_vggface2(
+                'train_split',
+                num_epochs=num_epochs,
+                shuffle=True,
+                batch_size=batch_size),
             max_steps=max_steps,
             hooks=[self.logging_hook]
         )
         return
 
-    def evaluate(self, batch_size=256, num_epochs=1):
+    def evaluate(self, batch_size=64, num_epochs=1):
         eval_results = self.estimator.evaluate(
-            input_fn=lambda: read_jpg_vggface2('train', num_epochs=num_epochs, batch_size=batch_size))
+            input_fn=lambda: read_jpg_vggface2(
+                'validation_split',
+                num_epochs=num_epochs,
+                shuffle=True,
+                batch_size=batch_size),
+            steps=None,
+            hooks=[self.logging_hook])
         print(eval_results)
         return
 
-    def train_and_evaluate(self, batch_size=256, num_epochs=200, max_steps=2400000):
-        def eval_metric_fn(predictions, features, labels):
-            return {'auc': tf.metrics.auc(
-                labels, predictions['classes'], weights=features['weight']
-            )}
-        self.estimator = tf.contrib.estimator.add_metrics(self.estimator, eval_metric_fn)
+    def train_and_eval(self, batch_size=256):
+        while True:
+            self.estimator.train(
+                input_fn=lambda: read_jpg_vggface2(
+                    'train_split',
+                    num_epochs=20,
+                    shuffle=True,
+                    batch_size=batch_size),
+                max_steps=100000000000,
+                hooks=[self.logging_hook]
+            )
+            eval_results = self.estimator.evaluate(
+                input_fn=lambda: read_jpg_vggface2(
+                    'validation_split',
+                    num_epochs=1,
+                    shuffle=True,
+                    batch_size=batch_size),
+                steps=500,
+                hooks=[self.logging_hook]
+            )
+            print(eval_results)
+        return
+
+    # !!DO NOT USE!! USE WITH TF VERSION 1.10.0
+    def train_and_evaluate(self, batch_size=256, max_steps=1200000):
         train_spec = tf.estimator.TrainSpec(
-            input_fn=lambda: read_jpg_vggface2('train',
-                                               num_epochs=num_epochs,
-                                               shuffle=True,
-                                               batch_size=batch_size),
+            input_fn=lambda: read_jpg_vggface2(
+                'train_split',
+                num_epochs=20,
+                shuffle=True,
+                batch_size=batch_size),
             max_steps=max_steps,
             hooks=[self.logging_hook]
         )
         eval_spec = tf.estimator.EvalSpec(
-            input_fn=lambda: read_jpg_vggface2('train',
-                                               num_epochs=1,
-                                               shuffle=False,
-                                               batch_size=batch_size),
-            steps=1000,
-            hooks=[self.logging_hook]
+            input_fn=lambda: read_jpg_vggface2(
+                'validation_split',
+                num_epochs=1,
+                shuffle=True,
+                batch_size=64),
+            steps=None,
+            hooks=[self.logging_hook],
+            throttle_secs=60*10
         )
         tf.estimator.train_and_evaluate(self.estimator, train_spec, eval_spec)
 
     def predict(self):
-        # TODO configure input source
-        predict_input_fn = tf.estimator.inputs.numpy_input_fn(x={})
-        predict_result = self.estimator.predict(predict_input_fn)
-        print(predict_result)
+        def predict_input_fn(path):
+            image_string = tf.read_file(path)
+            image_decoded = tf.image.decode_jpeg(image_string, channels=3)
+            image = tf.cast(image_decoded, tf.float32)
+            image_resized = tf.image.resize_images(image, [224, 224])
+            return image_resized
+
+        predict_results = self.estimator.predict(
+            input_fn=predict_input_fn('/data/public/rw/datasets/faces/debug/train/n005380/0034_01.jpg'))
+
+        for result in predict_results:
+            print(result)
         return
 
 
