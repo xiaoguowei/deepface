@@ -32,7 +32,7 @@ class ResNetRunner:
         self.estimator = tf.estimator.Estimator(
             # multi gpu setup (this has been deprecated after tf v1.8):
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
-            model_dir='/data/public/rw/workspace-annie/0724_SGD_after_10_20_25_40epochs_learning_rate_0.2_noeval',
+            model_dir='/data/public/rw/workspace-annie/0803_train_and_eval',
             config=run_config
         )
         logger.info('Custom estimator has been created.')
@@ -91,7 +91,7 @@ class ResNetRunner:
                     num_epochs=1,
                     shuffle=True,
                     batch_size=batch_size),
-                steps=500,
+                steps=1000,
                 hooks=[self.logging_hook]
             )
             print(eval_results)
