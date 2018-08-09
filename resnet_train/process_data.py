@@ -5,6 +5,7 @@ from __future__ import print_function
 import glob
 import os
 import csv
+import random
 
 import cv2
 import tensorflow as tf
@@ -188,7 +189,7 @@ def read_tfrecord_vggface2(filename,
 
 def read_jpg_vggface2(__data,
                       __path='/data/public/rw/datasets/faces/vggface2_cropped',
-                      buffer_size=1000,
+                      buffer_size=10000,
                       num_epochs=None,
                       shuffle=False,
                       batch_size=128,
@@ -226,6 +227,11 @@ def read_jpg_vggface2(__data,
             }, f, protocol=2)
         logger.info('Mapping completed.')
         logger.info('Starting to train...')
+
+    combined = list(zip(filelist, labels))
+    random.shuffle(combined)
+
+    filelist[:], labels[:] = zip(*combined)
 
     filelist = tf.constant(filelist)
     labels = tf.constant(labels)
