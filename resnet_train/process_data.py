@@ -187,14 +187,15 @@ def read_tfrecord_vggface2(filename,
     return iterator.get_next()
 
 
-def read_jpg_vggface2(__data,
-                      __path='/data/public/rw/datasets/faces/vggface2_cropped',
-                      buffer_size=10000,
-                      num_epochs=None,
-                      shuffle=False,
-                      batch_size=128,
-                      prefetch_buffer_size=6,
-                      cache_path='/data/private/deepface/resnet_train/filelist_'):
+def read_jpg_vggface2(
+        __data,
+        __path='/data/public/rw/datasets/faces/vggface2_cropped',
+        buffer_size=10000,
+        num_epochs=None,
+        shuffle=False,
+        batch_size=128,
+        prefetch_buffer_size=6,
+        cache_path='/data/private/deepface/resnet_train/filelist_'):
     cache_path = cache_path + __data + '.pkl'
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
@@ -230,18 +231,18 @@ def read_jpg_vggface2(__data,
 
     combined = list(zip(filelist, labels))
     random.shuffle(combined)
-
     filelist[:], labels[:] = zip(*combined)
 
     filelist = tf.constant(filelist)
     labels = tf.constant(labels)
     dataset = tf.data.Dataset.from_tensor_slices((filelist, labels))
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size)
+    dataset = dataset.repeat(num_epochs)
 
     dataset = dataset.map(_parse_image, num_parallel_calls=40)
     dataset = dataset.map(_augment, num_parallel_calls=40)
-    dataset = dataset.repeat(num_epochs)
-    if shuffle:
-        dataset = dataset.shuffle(buffer_size)
+
     dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
 
     # prefetches data for next available GPU
