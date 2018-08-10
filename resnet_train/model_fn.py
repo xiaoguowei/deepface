@@ -104,6 +104,9 @@ def resnet_model_fn(features, labels, mode):
     l = tf.layers.average_pooling2d(l, 7, 1)
     l = tf.layers.flatten(l)
 
+    # Dropout layer (Prevent overfitting)
+    l = tf.layers.dropout(l, rate=0.3)
+
     # Output layer
     logits = tf.layers.dense(l, units=8631)
 
@@ -127,6 +130,7 @@ def resnet_model_fn(features, labels, mode):
     tf.identity(loss, 'cross_entropy')
     tf.identity(accuracy[1], name='train_accuracy')
     tf.identity(labels, 'true_labels')
+    tf.summary.scalar('accuracy', accuracy[1])
 
     # Configure the Training Op
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -147,5 +151,4 @@ def resnet_model_fn(features, labels, mode):
 
     # Add evaluation metrics
     eval_metric_ops = {"accuracy": accuracy}
-    tf.summary.scalar('accuracy', accuracy[1])
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops, predictions=predictions)
