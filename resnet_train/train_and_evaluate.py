@@ -9,6 +9,9 @@ import sys
 import fire
 import tensorflow as tf
 
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(base_dir)
+
 from resnet_train.model_fn import resnet_model_fn
 from resnet_train.process_data import read_jpg_vggface2
 
@@ -47,7 +50,7 @@ class ResNetRunner:
         }
         self.logging_hook = tf.train.LoggingTensorHook(
             tensors=self.tensors_to_log,
-            every_n_iter=50
+            every_n_iter=100
         )
 
     def train(self, batch_size=256, num_epochs=50, max_steps=100000000):
@@ -113,10 +116,10 @@ class ResNetRunner:
                 'validation_split',
                 num_epochs=1,
                 shuffle=True,
-                batch_size=64),
-            steps=None,
+                batch_size=batch_size),
+            steps=100,
             hooks=[self.logging_hook],
-            throttle_secs=60*10
+            throttle_secs=60*60*1   # every 1 hour
         )
         tf.estimator.train_and_evaluate(self.estimator, train_spec, eval_spec)
 
