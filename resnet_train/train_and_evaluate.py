@@ -101,7 +101,7 @@ class ResNetRunner:
         return
 
     # !!DO NOT USE!! USE WITH TF VERSION 1.10.0
-    def train_and_evaluate(self, batch_size=256, max_steps=1200000):
+    def train_and_evaluate(self, batch_size=256, max_steps=4000000):
         train_spec = tf.estimator.TrainSpec(
             input_fn=lambda: read_jpg_vggface2(
                 'train_split',

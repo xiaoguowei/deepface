@@ -104,6 +104,9 @@ def resnet_model_fn(features, labels, mode):
     l = tf.layers.average_pooling2d(l, 7, 1)
     l = tf.layers.flatten(l)
 
+    # Dropout layer (Prevent overfitting)
+    l = tf.layers.dropout(l, rate=0.5)
+
     # Output layer
     logits = tf.layers.dense(l, units=8631)
 
@@ -117,6 +120,8 @@ def resnet_model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
     accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
+    accuracy5 = tf.cast(tf.nn.in_top_k(predictions=predictions['probabilities'], targets=labels, k=5), tf.float32)
+    accuracy5 = tf.reduce_mean(accuracy5)
 
     # Calculate Loss - weight decay of 0.0001
     cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
@@ -127,12 +132,20 @@ def resnet_model_fn(features, labels, mode):
     tf.identity(loss, 'cross_entropy')
     tf.identity(accuracy[1], name='train_accuracy')
     tf.identity(labels, 'true_labels')
+    tf.summary.scalar('accuracy', accuracy[1])
+    tf.summary.scalar('accuracy5', accuracy5)
 
     # Configure the Training Op
     if mode == tf.estimator.ModeKeys.TRAIN:
         # Piecewise constant learning rate:
-        learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [120000, 240000, 300000, 480000],
-                                                    [0.2, 0.15, 0.1, 0.01, 0.001])
+        # learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [120000, 240000, 300000, 480000],
+        #                                             [0.2, 0.15, 0.1, 0.01, 0.001])
+        # lr 3
+        learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [80000, 100000, 120000, 140000, 160000, 200000],
+                                                    [0.1, 0.05, 0.025, 0.01, 0.005, 0.001, 0.0001])
+        # lr 4
+        # learning_rate = tf.train.piecewise_constant(tf.train.get_global_step(), [160000, 200000, 240000, 280000, 340000, 400000],
+        #                                             [0.1, 0.05, 0.025, 0.01, 0.005, 0.001, 0.0001])
         tf.identity(learning_rate, 'learning_rate')
         tf.summary.scalar('learning_rate', learning_rate)
 
@@ -146,6 +159,5 @@ def resnet_model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     # Add evaluation metrics
-    eval_metric_ops = {"accuracy": accuracy}
-    tf.summary.scalar('accuracy', accuracy[1])
+    eval_metric_ops = {"accuracy": accuracy, 'accuracy5': accuracy5}
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops, predictions=predictions)
