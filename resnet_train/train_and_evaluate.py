@@ -35,7 +35,8 @@ class ResNetRunner:
         self.estimator = tf.estimator.Estimator(
             # multi gpu setup (this has been deprecated after tf v1.8):
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
-            model_dir='/data/public/rw/workspace-annie/0724_SGD_after_10_20_25_40epochs_learning_rate_0.2_noeval',
+            # model_dir='/data/public/rw/workspace-annie/train_acc_0.99_copy',
+            model_dir='/data/private/deepface-models/augmentation_added_lr4',
             config=run_config
         )
         logger.info('Custom estimator has been created.')
@@ -71,6 +72,7 @@ class ResNetRunner:
                 'validation_split',
                 num_epochs=num_epochs,
                 shuffle=True,
+                augmentation=False,
                 batch_size=batch_size),
             steps=None,
             hooks=[self.logging_hook])
@@ -107,6 +109,7 @@ class ResNetRunner:
                 'train_split',
                 num_epochs=20,
                 shuffle=True,
+                augmentation=True,
                 batch_size=batch_size),
             max_steps=max_steps,
             hooks=[self.logging_hook]
@@ -116,6 +119,7 @@ class ResNetRunner:
                 'validation_split',
                 num_epochs=1,
                 shuffle=True,
+                augmentation=False,
                 batch_size=batch_size),
             steps=100,
             hooks=[self.logging_hook],

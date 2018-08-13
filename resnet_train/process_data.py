@@ -139,15 +139,11 @@ def _parse_image(filename, label):
     image_string = tf.read_file(filename)
     image_decoded = tf.image.decode_jpeg(image_string, channels=3)
     image = tf.cast(image_decoded, tf.float32)
-    image_resized = tf.image.resize_images(image, [224, 224])
-    return image_resized, label
 
+    return image, label
 
-def _batch_normalize(tensor_in, label, epsilon=0.0001):
-    """Helper for applying batch normalization on input tensor"""
-    mean, variance = tf.nn.moments(tensor_in, axes=[0])
-    tensor_out = (tensor_in - mean) / (variance + epsilon)
-    return tensor_out, label
+    # image_resized = tf.image.resize_images(image, [224, 224])
+    # return image_resized, label
 
 
 def _augment(image, label):
@@ -156,6 +152,15 @@ def _augment(image, label):
     image = tf.image.random_contrast(image, 0.8, 1.2)
     image = tf.image.random_saturation(image, 0.8, 1.2)
     image = tf.image.random_flip_left_right(image)
+
+    image = tf.contrib.image.rotate(image, tf.random_uniform([1], -0.34, 0.34), interpolation='bilinear')
+    image = tf.image.resize_images(image, tf.random_uniform([2], 224, 236, dtype=tf.int32))
+    image = tf.random_crop(image, [224, 224, 3])
+    return image, label
+
+
+def _no_augment(image, label):
+    image = tf.image.resize_images(image, [224, 224])
     return image, label
 
 
@@ -195,6 +200,7 @@ def read_jpg_vggface2(
         shuffle=False,
         batch_size=128,
         prefetch_buffer_size=6,
+        augmentation=False,
         cache_path='/data/private/deepface/resnet_train/filelist_'):
     cache_path = cache_path + __data + '.pkl'
     if os.path.exists(cache_path):
@@ -241,7 +247,10 @@ def read_jpg_vggface2(
     dataset = dataset.repeat(num_epochs)
 
     dataset = dataset.map(_parse_image, num_parallel_calls=40)
-    dataset = dataset.map(_augment, num_parallel_calls=40)
+    if augmentation:
+        dataset = dataset.map(_augment, num_parallel_calls=40)
+    else:
+        dataset = dataset.map(_no_augment, num_parallel_calls=20)
 
     dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
 
