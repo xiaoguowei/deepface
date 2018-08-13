@@ -30,13 +30,13 @@ os.environ['GLOG_logtostderr'] = '1'
 
 class ResNetRunner:
     def __init__(self):
+        model_name = 'aug_lr4'      # fixme
         run_config = tf.estimator.RunConfig(save_checkpoints_steps=1000,
                                             keep_checkpoint_max=3)
         self.estimator = tf.estimator.Estimator(
             # multi gpu setup (this has been deprecated after tf v1.8):
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
-            # model_dir='/data/public/rw/workspace-annie/train_acc_0.99_copy',
-            model_dir='/data/private/deepface-models/augmentation_added_lr4',
+            model_dir='/data/private/deepface-models/%s' % model_name,
             config=run_config
         )
         logger.info('Custom estimator has been created.')
@@ -96,7 +96,7 @@ class ResNetRunner:
                     num_epochs=1,
                     shuffle=True,
                     batch_size=batch_size),
-                steps=500,
+                steps=1000,
                 hooks=[self.logging_hook]
             )
             print(eval_results)
