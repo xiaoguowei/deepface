@@ -35,7 +35,7 @@ class ResNetRunner:
         self.estimator = tf.estimator.Estimator(
             # multi gpu setup (this has been deprecated after tf v1.8):
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
-            model_dir='/data/public/rw/workspace-annie/0803_train_and_eval',
+            model_dir='/data/public/rw/workspace-annie/0810_data_augment_debugger',
             config=run_config
         )
         logger.info('Custom estimator has been created.')
@@ -56,7 +56,7 @@ class ResNetRunner:
     def train(self, batch_size=256, num_epochs=50, max_steps=100000000):
         self.estimator.train(
             input_fn=lambda: read_jpg_vggface2(
-                'train_split',
+                'augment_debugger',
                 num_epochs=num_epochs,
                 shuffle=True,
                 batch_size=batch_size),
@@ -65,14 +65,14 @@ class ResNetRunner:
         )
         return
 
-    def evaluate(self, batch_size=64, num_epochs=1):
+    def evaluate(self, batch_size=256, num_epochs=1):
         eval_results = self.estimator.evaluate(
             input_fn=lambda: read_jpg_vggface2(
                 'validation_split',
                 num_epochs=num_epochs,
                 shuffle=True,
                 batch_size=batch_size),
-            steps=None,
+            steps=1000,
             hooks=[self.logging_hook])
         print(eval_results)
         return
@@ -81,8 +81,8 @@ class ResNetRunner:
         while True:
             self.estimator.train(
                 input_fn=lambda: read_jpg_vggface2(
-                    'train_split',
-                    num_epochs=20,
+                    'train_split2',
+                    num_epochs=2,
                     shuffle=True,
                     batch_size=batch_size),
                 max_steps=100000000000,
@@ -90,7 +90,7 @@ class ResNetRunner:
             )
             eval_results = self.estimator.evaluate(
                 input_fn=lambda: read_jpg_vggface2(
-                    'validation_split',
+                    'validation_split2',
                     num_epochs=1,
                     shuffle=True,
                     batch_size=batch_size),

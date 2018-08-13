@@ -1,5 +1,6 @@
 import os
 import glob
+import numpy as np
 
 import cv2
 import fire
@@ -29,56 +30,99 @@ def read_detect_write(detector, f, __path, __data):
 
 
 class RunCrop:
-    def __init__(self):
-        pass
+    def __init__(self, ind=0, numworkers=1):
+        self.detector = FaceDetectorDlib()
 
-    def run(self, ind, numworkers=1):
+        self.__path = '/data/public/rw/datasets/faces/augment_debugger'
+        self.__mode = ''
 
-        d = FaceDetectorDlib()
-
-        __path = '/data/public/rw/datasets/faces/vggface2'
-        __save_path = '/data/public/rw/datasets/faces/vggface2_cropped_debug'
-        __train = 'train'
-        __test = 'train'
-
-        cachepath = '/data/private/deepface/resnet_train/crop_filelist.pkl'
+        cachepath = '/data/private/deepface/resnet_train/0813_debugger2.pkl'
         if os.path.exists(cachepath):
             with open(cachepath, 'rb') as f:
                 pkl = pickle.load(f)
             print('loaded from cache file.')
-            todo_filelist = pkl['filelist']
-            # saved_filelist = pkl['saved_filelist']
+            self.filelist = pkl['filelist']
         else:
-            trainpath = os.path.join(__path, __test, '*/*.jpg')
-            savedtrainpath = os.path.join(__save_path, __test, '*/*.jpg')
+            trainpath = os.path.join(self.__path, self.__mode, '*/*.jpg')
             print('loading file list...')
-            todo_filelist = glob.glob(trainpath)
-            saved_filelist = glob.glob(savedtrainpath)
+            self.filelist = glob.glob(trainpath)
             print('loading completed.')
             with open(cachepath, 'wb') as f:
                 pickle.dump({
-                    'todo_filelist': todo_filelist,
-                    'saved_filelist': saved_filelist
+                    'filelist': self.filelist
                 }, f, protocol=2)
 
+        self.ind = ind
+        self.numworkers = numworkers
+        self.seg_start = ind * int(len(self.filelist) / numworkers)
+        self.seg_end = (ind + 1) * int(len(self.filelist) / numworkers)
+
+    def saveCoordinates(self):
+        # label, img_name, x, y, w, h
+        file_bbox = {}
         count = 0
-        seg_start = ind * int(len(todo_filelist) / numworkers)
-        seg_end = (ind + 1) * int(len(todo_filelist) / numworkers)
+        for f in self.filelist[self.seg_start:self.seg_end]:
+            img = cv2.imread(f, cv2.IMREAD_COLOR)
+            faces = self.detector.detect(img)
+            width = img.shape[1]
+            height = img.shape[0]
 
-        print('Start detection.')
-        for f in todo_filelist[seg_start:seg_end]:
-            indx = f.find('/test/')
-            check = f[:indx] + '_cropped' + f[indx:]
-            read_detect_write(d, f, __save_path, __test)
+            label_imgname = os.path.join(os.path.basename(os.path.dirname(f)), os.path.basename(f))
+            try:
+                # Use the face in the most center:
+                deltas = []
+                for face in faces:
+                    x = face.w / 2 + face.x
+                    y = face.h / 2 + face.y
+                    deltas.append(((width / 2 - x) ** 2 + (height / 2 - y) ** 2) ** 0.5)
+                ind = np.argmin(deltas)
 
-            # if check in saved_filelist:
-            #     print('%s exists.' % check)
-            #     continue
-            # else:
-            #     read_detect_write(d, f, __save_path, __test)
+                # Discard faces outside the image
+                if width < faces[ind].x + faces[ind].w or height < faces[ind].y + faces[ind].h:
+                    print("wow! here's the error")
+                file_bbox[label_imgname] = {'x': int(max(0, faces[ind].x)),
+                                            'y': int(max(0, faces[ind].y)),
+                                            'w': int(min(width - x, faces[ind].w)),
+                                            'h': int(min(height - y, faces[ind].h))}
+                if width < file_bbox[label_imgname]['x'] + file_bbox[label_imgname]['w'] or height < \
+                        file_bbox[label_imgname]['h'] + file_bbox[label_imgname]['y']:
+                    print("wow! it still hasn't been fixed!")
+            except Exception as e:
+                pass
 
             if count % 500 == 0:
-                print('[Worker_%d]: %d of %d completed.' % (ind + 1, count, len(todo_filelist) / numworkers))
+                print('[Worker_%d]: %d of %d completed.' % (self.ind + 1, count, len(self.filelist) / self.numworkers))
+            count += 1
+
+        with open('/data/private/deepface/resnet_train/file_bbox_' + str(self.ind) + '.pkl', 'wb') as f:
+            pickle.dump({
+                'bounding_box': file_bbox
+            }, f, protocol=2)
+
+    def mergeAllBboxPkl(self):
+        file_bbox = {}
+        for i in range(self.numworkers):
+            with open('/data/private/deepface/resnet_train/file_bbox_' + i + '.pkl', 'rb') as f:
+                d = pickle.load(f)
+            file_bbox.update(d['bounding_box'])
+
+        with open('/data/private/deepface/resnet_train/file_bbox.pkl', 'wb') as f:
+            pickle.dump({
+                'bounding_box': file_bbox
+            }, f, protocol=2)
+        print('Saved %d bounding box coordinates' % len(file_bbox))
+
+    def run(self):
+        __save_path = '/data/public/rw/datasets/faces/vggface2_cropped_debug'
+
+        count = 0
+
+        print('Start detection.')
+        for f in self.filelist[self.seg_start:self.seg_end]:
+            read_detect_write(self.detector, f, __save_path, self.__mode)
+
+            if count % 500 == 0:
+                print('[Worker_%d]: %d of %d completed.' % (self.ind + 1, count, len(self.filelist) / self.numworkers))
             count += 1
 
 

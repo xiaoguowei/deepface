@@ -7,6 +7,7 @@ import tensorflow as tf
 LEARNING_RATE = 1e-3
 TRAIN_SIZE = 3e6
 WEIGHT_DECAY = 1e-4
+MOMENTUM = 0.99
 
 
 def conv_block(input_tensor, filters, stage, block, mode, strides=(2, 2), bias=False):
@@ -15,21 +16,21 @@ def conv_block(input_tensor, filters, stage, block, mode, strides=(2, 2), bias=F
     layer_name = 'conv' + str(stage) + '_' + str(block)
     l = tf.layers.conv2d(input_tensor, filters[0], 1, strides=strides, use_bias=bias,
                          name=layer_name + '_1x1_reduce')
-    l = tf.layers.batch_normalization(l, axis=3, momentum=0.9, name=layer_name + '_1x1_reduce/bn',
+    l = tf.layers.batch_normalization(l, axis=3, momentum=MOMENTUM, name=layer_name + '_1x1_reduce/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
     l = tf.nn.relu(l)
 
     l = tf.layers.conv2d(l, filters[1], 3, padding='SAME', use_bias=bias, name=layer_name + '_3x3')
-    l = tf.layers.batch_normalization(l, axis=3, momentum=0.9, name=layer_name + '_3x3/bn',
+    l = tf.layers.batch_normalization(l, axis=3, momentum=MOMENTUM, name=layer_name + '_3x3/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
     l = tf.nn.relu(l)
 
     l = tf.layers.conv2d(l, filters[2], 1, name=layer_name + '_1x1_increase')
-    l = tf.layers.batch_normalization(l, axis=3, momentum=0.9, name=layer_name + '_1x1_increase/bn',
+    l = tf.layers.batch_normalization(l, axis=3, momentum=MOMENTUM, name=layer_name + '_1x1_increase/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
 
     m = tf.layers.conv2d(input_tensor, filters[2], 1, strides=strides, use_bias=bias, name=layer_name + '_1x1_proj')
-    m = tf.layers.batch_normalization(m, axis=3, momentum=0.9, name=layer_name + '_1x1_proj/bn',
+    m = tf.layers.batch_normalization(m, axis=3, momentum=MOMENTUM, name=layer_name + '_1x1_proj/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
 
     l = tf.add(l, m)
@@ -42,16 +43,16 @@ def identity_block(input_tensor, filters, stage, block, mode, bias=False):
 
     layer_name = 'conv' + str(stage) + '_' + str(block)
     l = tf.layers.conv2d(input_tensor, filters[0], 1, use_bias=bias, name=layer_name + '_1x1_reduce')
-    l = tf.layers.batch_normalization(l, axis=3, momentum=0.9, name=layer_name + '_1x1_reduce/bn',
+    l = tf.layers.batch_normalization(l, axis=3, momentum=MOMENTUM, name=layer_name + '_1x1_reduce/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
     l = tf.nn.relu(l)
 
     l = tf.layers.conv2d(l, filters[1], 3, padding='SAME', use_bias=bias, name=layer_name + '_3x3')
-    l = tf.layers.batch_normalization(l, momentum=0.9, name=layer_name + '_3x3/bn',
+    l = tf.layers.batch_normalization(l, momentum=MOMENTUM, name=layer_name + '_3x3/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
     l = tf.nn.relu(l)
     l = tf.layers.conv2d(l, filters[2], 1, use_bias=bias, name=layer_name + '_1x1_increase')
-    l = tf.layers.batch_normalization(l, momentum=0.9, name=layer_name + '_1x1_increase/bn',
+    l = tf.layers.batch_normalization(l, momentum=MOMENTUM, name=layer_name + '_1x1_increase/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
 
     l = tf.add(l, input_tensor)
@@ -60,6 +61,7 @@ def identity_block(input_tensor, filters, stage, block, mode, bias=False):
 
 
 def resnet_model_fn(features, labels, mode):
+    tf.summary.image('input_image', features)
     """Model function for ResNet architecture"""
     input_layer = tf.reshape(features, [-1, 224, 224, 3])
 
@@ -70,7 +72,7 @@ def resnet_model_fn(features, labels, mode):
     # Building hidden layers (ResNet architecture)
     # First block:
     l = tf.layers.conv2d(input_layer, 64, (7, 7), strides=(2, 2), padding='SAME', use_bias=False, name='conv1/7x7_s2')
-    l = tf.layers.batch_normalization(l, axis=3, momentum=0.9, name='conv1/7x7_s2/bn',
+    l = tf.layers.batch_normalization(l, axis=3, momentum=MOMENTUM, name='conv1/7x7_s2/bn',
                                       training=mode == tf.estimator.ModeKeys.TRAIN)
 
     l = tf.nn.relu(l)
@@ -105,7 +107,7 @@ def resnet_model_fn(features, labels, mode):
     l = tf.layers.flatten(l)
 
     # Dropout layer (Prevent overfitting)
-    l = tf.layers.dropout(l, rate=0.3)
+    l = tf.layers.dropout(l, rate=0.5)
 
     # Output layer
     logits = tf.layers.dense(l, units=8631)
