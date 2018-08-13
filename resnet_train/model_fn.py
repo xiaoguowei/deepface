@@ -61,7 +61,7 @@ def identity_block(input_tensor, filters, stage, block, mode, bias=False):
 
 
 def resnet_model_fn(features, labels, mode):
-    tf.summary.image('input_image', features)
+    # tf.summary.image('input_image', features)
     """Model function for ResNet architecture"""
     input_layer = tf.reshape(features, [-1, 224, 224, 3])
 

@@ -30,12 +30,13 @@ os.environ['GLOG_logtostderr'] = '1'
 
 class ResNetRunner:
     def __init__(self):
+        self.run_name = '0813_tester'    #FIXME
         run_config = tf.estimator.RunConfig(save_checkpoints_steps=1000,
                                             keep_checkpoint_max=3)
         self.estimator = tf.estimator.Estimator(
             # multi gpu setup (this has been deprecated after tf v1.8):
             model_fn=tf.contrib.estimator.replicate_model_fn(resnet_model_fn),
-            model_dir='/data/public/rw/workspace-annie/0810_data_augment_debugger',
+            model_dir='/data/public/rw/workspace-annie/' + self.run_name,
             config=run_config
         )
         logger.info('Custom estimator has been created.')
@@ -56,7 +57,8 @@ class ResNetRunner:
     def train(self, batch_size=256, num_epochs=50, max_steps=100000000):
         self.estimator.train(
             input_fn=lambda: read_jpg_vggface2(
-                'augment_debugger',
+                mode=tf.estimator.ModeKeys.TRAIN,
+                name=self.run_name,
                 num_epochs=num_epochs,
                 shuffle=True,
                 batch_size=batch_size),
@@ -68,7 +70,8 @@ class ResNetRunner:
     def evaluate(self, batch_size=256, num_epochs=1):
         eval_results = self.estimator.evaluate(
             input_fn=lambda: read_jpg_vggface2(
-                'validation_split',
+                mode=tf.estimator.ModeKeys.EVAL,
+                name=self.run_name,
                 num_epochs=num_epochs,
                 shuffle=True,
                 batch_size=batch_size),
@@ -81,7 +84,8 @@ class ResNetRunner:
         while True:
             self.estimator.train(
                 input_fn=lambda: read_jpg_vggface2(
-                    'train_split2',
+                    mode=tf.estimator.ModeKeys.TRAIN,
+                    name=self.run_name,
                     num_epochs=2,
                     shuffle=True,
                     batch_size=batch_size),
@@ -90,7 +94,8 @@ class ResNetRunner:
             )
             eval_results = self.estimator.evaluate(
                 input_fn=lambda: read_jpg_vggface2(
-                    'validation_split2',
+                    mode=tf.estimator.ModeKeys.EVAL,
+                    name=self.run_name,
                     num_epochs=1,
                     shuffle=True,
                     batch_size=batch_size),
@@ -104,7 +109,8 @@ class ResNetRunner:
     def train_and_evaluate(self, batch_size=256, max_steps=1200000):
         train_spec = tf.estimator.TrainSpec(
             input_fn=lambda: read_jpg_vggface2(
-                'train_split',
+                mode=tf.estimator.ModeKeys.TRAIN,
+                name=self.run_name,
                 num_epochs=20,
                 shuffle=True,
                 batch_size=batch_size),
@@ -113,13 +119,14 @@ class ResNetRunner:
         )
         eval_spec = tf.estimator.EvalSpec(
             input_fn=lambda: read_jpg_vggface2(
-                'validation_split',
+                mode=tf.estimator.ModeKeys.EVAL,
+                name=self.run_name,
                 num_epochs=1,
                 shuffle=True,
                 batch_size=batch_size),
             steps=100,
             hooks=[self.logging_hook],
-            throttle_secs=60*60*1   # every 1 hour
+            throttle_secs=60 * 60 * 1  # every 1 hour
         )
         tf.estimator.train_and_evaluate(self.estimator, train_spec, eval_spec)
 

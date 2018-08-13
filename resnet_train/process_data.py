@@ -19,13 +19,13 @@ from deepface.utils.common import get_roi
 from deepface.detectors.detector_dlib import FaceDetectorDlib
 from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
 
-with open('/data/private/deepface/resnet_train/file_bbox_0.pkl', 'rb') as f:
+with open('/data/private/deepface/resnet_train/augment_debugger_0.pkl', 'rb') as f: #FIXME
     pkl = pickle.load(f)
     file_bbox = pkl['bounding_box']
 
-TRANSLATE_DELTA = 10
-ROTATE_ANGLE = 5
-CROPSIZE_DELTA = 10
+TRANSLATE_DELTA = 15
+ROTATE_ANGLE = 0.4
+CROPSIZE_DELTA = 25
 
 
 def _int64_feature(value):
@@ -174,22 +174,16 @@ def _parse_and_augment(filename, label, x, y, w, h):
     image = tf.cast(image_decoded, tf.float32)
 
     # augmentation
-    image = tf.image.crop_to_bounding_box(image, y, x, h, w)
-    image = tf.contrib.image.rotate(image,
-                                    angles=int(360 - (ROTATE_ANGLE / 2) + (ROTATE_ANGLE * random.uniform(0, 1))))
-    # image = tf.image.crop_to_bounding_box(image,
-    #                                       offset_width=tf.add(
-    #                                           y, tf.constant(
-    #                                               int(TRANSLATE_DELTA * random.uniform(0, 1)))),
-    #                                       offset_height=tf.add(
-    #                                           x, tf.constant(
-    #                                               int(TRANSLATE_DELTA * random.uniform(0, 1)))),
-    #                                       target_width=tf.add(
-    #                                           h, tf.constant(
-    #                                               int(CROPSIZE_DELTA * random.uniform(0, 1)))),
-    #                                       target_height=tf.add(
-    #                                           w, tf.constant(
-    #                                               int(CROPSIZE_DELTA * random.uniform(0, 1)))))
+    image = tf.contrib.image.rotate(image, tf.random_uniform([1], -1 * ROTATE_ANGLE, ROTATE_ANGLE),
+                                    interpolation='bilinear')
+    width = tf.shape(image)[1]
+    height = tf.shape(image)[0]
+
+    offset_height = tf.maximum(0, y + int(TRANSLATE_DELTA * random.uniform(-1, 1)))
+    offset_width = tf.maximum(0, x + int(TRANSLATE_DELTA * random.uniform(-1, 1)))
+    target_height = tf.minimum(height - y, h + int(CROPSIZE_DELTA * random.uniform(-0.1, 1)))
+    target_width = tf.minimum(width - x, w + int(CROPSIZE_DELTA * random.uniform(-0.1, 1)))
+    image = tf.image.crop_to_bounding_box(image, offset_height, offset_width, target_height, target_width)
 
     image = tf.image.random_brightness(image, max_delta=0.2)
     image = tf.image.random_contrast(image, 0.8, 1.2)
@@ -230,15 +224,16 @@ def read_tfrecord_vggface2(filename,
 
 
 def read_jpg_vggface2(
-        __data,
-        __path='/data/public/rw/datasets/faces/',
+        mode,
+        name,
+        path='/data/public/rw/datasets/faces/vggface2/train',
         buffer_size=10000,
         num_epochs=None,
         shuffle=False,
         batch_size=128,
         prefetch_buffer_size=6,
         cache_path='/data/private/deepface/resnet_train/filelist_'):
-    cache_path = cache_path + __data + '.pkl'
+    cache_path = cache_path + name + '.pkl'
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             d = pickle.load(f)
@@ -256,9 +251,15 @@ def read_jpg_vggface2(
         from resnet_train.train_and_evaluate import logger
         logger.info('Loading all the datafiles..')
 
-        datapath = os.path.join(__path, __data, '*/*.jpg')
-        filelist = glob.glob(datapath)
-        labelpath = os.path.join(__path, __data, '*')
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            with open('/data/private/deepface/resnet_train/vggface2_train_list_tester.pkl', 'rb') as f: #FIXME
+                d = pickle.load(f)
+            filelist = d['filelist']
+        elif mode == tf.estimator.ModeKeys.EVAL:
+            with open('/data/private/deepface/resnet_train/vggface2_eval_list_tester.pkl', 'rb') as f: #FIXME
+                d = pickle.load(f)
+            filelist = d['filelist']
+        labelpath = os.path.join(path, '*')
         labelist = glob.glob(labelpath)
 
         logger.info('Mapping all the class_id\'s to indices..')
@@ -270,27 +271,17 @@ def read_jpg_vggface2(
         filtered_filelist = []
         for file in filelist:
             try:
-                img = cv2.imread(file, cv2.IMREAD_COLOR)
-                width = img.shape[1]
-                height = img.shape[0]
-
                 bounding_box = file_bbox[os.path.join(os.path.basename(os.path.dirname(file)), os.path.basename(file))]
                 x.append(bounding_box['x'])
                 y.append(bounding_box['y'])
                 w.append(bounding_box['w'])
                 h.append(bounding_box['h'])
 
-                if height < bounding_box['y'] + bounding_box['h']:
-                    print('HERES THE ERROR!!!')
-                elif width < bounding_box['x'] + bounding_box['w']:
-                    print("HERES ANOTHER ERROR")
-
-                label_txt = os.path.join(__path, __data, os.path.basename(os.path.dirname(file)))
+                label_txt = os.path.join(path, os.path.basename(os.path.dirname(file)))
                 labels.append(labelist.index(label_txt))
 
                 filtered_filelist.append(file)
-            except Exception as e:
-                print(str(e))
+            except:
                 continue
 
         with open(cache_path, 'wb') as f:
@@ -305,18 +296,11 @@ def read_jpg_vggface2(
         logger.info('Mapping completed.')
         logger.info('Starting to train...')
 
-    for i in range(len(filtered_filelist)):
-        img = cv2.imread(filtered_filelist[i], cv2.IMREAD_COLOR)
-        if img.shape[0] < y[i] + h[i]:
-            print('%s [%d < %d + %d]' % (filtered_filelist[i], img.shape[0], y[i], h[i]))
-        elif img.shape[1] < x[i] + w[i]:
-            print('wow heres another error!')
-
     combined = list(zip(filtered_filelist, labels, x, y, w, h))
     random.shuffle(combined)
-    filelist[:], labels[:], x[:], y[:], w[:], h[:] = zip(*combined)
+    filtered_filelist[:], labels[:], x[:], y[:], w[:], h[:] = zip(*combined)
 
-    filelist = tf.constant(filelist)
+    filelist = tf.constant(filtered_filelist)
     labels = tf.constant(labels)
     x = tf.constant(x, dtype=tf.int32)
     y = tf.constant(y, dtype=tf.int32)
@@ -326,10 +310,6 @@ def read_jpg_vggface2(
     if shuffle:
         dataset = dataset.shuffle(buffer_size)
     dataset = dataset.repeat(num_epochs)
-
-    # dataset = dataset.map(_parse_image, num_parallel_calls=40)
-    # dataset = dataset.map(_augment, num_parallel_calls=40)
-
     dataset = dataset.map(_parse_and_augment, num_parallel_calls=40)
 
     dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
