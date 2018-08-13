@@ -159,5 +159,5 @@ def resnet_model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     # Add evaluation metrics
-    eval_metric_ops = {"accuracy": accuracy, 'accuracy5': accuracy5}
+    eval_metric_ops = {"accuracy": accuracy}
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops, predictions=predictions)
