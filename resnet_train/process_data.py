@@ -19,8 +19,8 @@ from deepface.utils.common import get_roi
 from deepface.detectors.detector_dlib import FaceDetectorDlib
 from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
 
-with open('/data/private/deepface/resnet_train/file_bbox.pkl', 'rb') as f:
-    pkl = pickle.load(f)
+with open('/data/private/deepface/resnet_train/bbox.pkl', 'rb') as file:
+    pkl = pickle.load(file)
     file_bbox = pkl['bounding_box']
 
 TRANSLATE_DELTA = 15
@@ -233,9 +233,7 @@ def read_jpg_vggface2(
         shuffle=False,
         batch_size=128,
         prefetch_buffer_size=6,
-        cache_path='/data/private/deepface/resnet_train/filelist_'):
-    # cache_path = cache_path + name + '.pkl'
-    cache_path = '/data/private/deepface/resnet_train/filelist_0813_bbox.pkl'
+        cache_path='/data/public/rw/workspace-annie/pkl_files/filelist_w_bbox.pkl'):
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             d = pickle.load(f)
@@ -254,11 +252,11 @@ def read_jpg_vggface2(
         logger.info('Loading all the datafiles..')
 
         if mode == tf.estimator.ModeKeys.TRAIN:
-            with open('/data/private/deepface/resnet_train/vggface2_train_list.pkl', 'rb') as f:
+            with open('/data/public/rw/workspace-annie/pkl_files/vggface2_train_list.pkl', 'rb') as f:
                 d = pickle.load(f)
             filelist = d['filelist']
         elif mode == tf.estimator.ModeKeys.EVAL:
-            with open('/data/private/deepface/resnet_train/vggface2_eval_list.pkl', 'rb') as f:
+            with open('/data/public/rw/workspace-annie/pkl_files/vggface2_eval_list.pkl', 'rb') as f:
                 d = pickle.load(f)
             filelist = d['filelist']
         labelpath = os.path.join(path, '*')

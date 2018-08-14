@@ -30,7 +30,7 @@ os.environ['GLOG_logtostderr'] = '1'
 
 class ResNetRunner:
     def __init__(self):
-        self.run_name = '0813_tester'    #FIXME
+        self.run_name = 'run_name'
         run_config = tf.estimator.RunConfig(save_checkpoints_steps=1000,
                                             keep_checkpoint_max=3)
         self.estimator = tf.estimator.Estimator(
