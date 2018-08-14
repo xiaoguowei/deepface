@@ -145,6 +145,18 @@ class ResNetRunner:
             print(result)
         return
 
+    def export_saved_model(self):
+        def serving_input_reciever_fn():
+            inputs = tf.placeholder(tf.float32, [None, 224, 224, 3])
+            return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+
+        export_dir = self.estimator.export_savedmodel(
+            export_dir_base='/data/public/rw/workspace-annie/',
+            serving_input_receiver_fn=serving_input_reciever_fn
+        )
+        print(export_dir)
+        return
+
 
 if __name__ == '__main__':
     fire.Fire(ResNetRunner)
