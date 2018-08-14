@@ -19,12 +19,12 @@ from deepface.utils.common import get_roi
 from deepface.detectors.detector_dlib import FaceDetectorDlib
 from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
 
-with open('/data/private/deepface/resnet_train/augment_debugger_0.pkl', 'rb') as f: #FIXME
+with open('/data/private/deepface/resnet_train/file_bbox.pkl', 'rb') as f:
     pkl = pickle.load(f)
     file_bbox = pkl['bounding_box']
 
 TRANSLATE_DELTA = 15
-ROTATE_ANGLE = 0.4
+ROTATE_ANGLE = 0.3
 CROPSIZE_DELTA = 25
 
 
@@ -174,16 +174,17 @@ def _parse_and_augment(filename, label, x, y, w, h):
     image = tf.cast(image_decoded, tf.float32)
 
     # augmentation
-    image = tf.contrib.image.rotate(image, tf.random_uniform([1], -1 * ROTATE_ANGLE, ROTATE_ANGLE),
-                                    interpolation='bilinear')
     width = tf.shape(image)[1]
     height = tf.shape(image)[0]
 
-    offset_height = tf.maximum(0, y + int(TRANSLATE_DELTA * random.uniform(-1, 1)))
-    offset_width = tf.maximum(0, x + int(TRANSLATE_DELTA * random.uniform(-1, 1)))
-    target_height = tf.minimum(height - y, h + int(CROPSIZE_DELTA * random.uniform(-0.1, 1)))
-    target_width = tf.minimum(width - x, w + int(CROPSIZE_DELTA * random.uniform(-0.1, 1)))
+    offset_height = tf.maximum(0, y + tf.cast((tf.multiply(tf.cast(h, tf.float32), random.uniform(-0.1, 0.1))), tf.int32))
+    offset_width = tf.maximum(0, x + tf.cast((tf.multiply(tf.cast(w, tf.float32), random.uniform(-0.1, 0.1))), tf.int32))
+    target_height = tf.minimum(height - offset_height, tf.cast((tf.multiply(tf.cast(h, tf.float32), random.uniform(0.9, 1.1))), tf.int32))
+    target_width = tf.minimum(width - offset_width, tf.cast((tf.multiply(tf.cast(w, tf.float32), random.uniform(0.9, 1.1))), tf.int32))
     image = tf.image.crop_to_bounding_box(image, offset_height, offset_width, target_height, target_width)
+
+    image = tf.contrib.image.rotate(image, tf.random_uniform([1], -1 * ROTATE_ANGLE, ROTATE_ANGLE),
+                                    interpolation='bilinear')
 
     image = tf.image.random_brightness(image, max_delta=0.2)
     image = tf.image.random_contrast(image, 0.8, 1.2)
@@ -233,7 +234,8 @@ def read_jpg_vggface2(
         batch_size=128,
         prefetch_buffer_size=6,
         cache_path='/data/private/deepface/resnet_train/filelist_'):
-    cache_path = cache_path + name + '.pkl'
+    # cache_path = cache_path + name + '.pkl'
+    cache_path = '/data/private/deepface/resnet_train/filelist_0813_bbox.pkl'
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             d = pickle.load(f)
@@ -252,11 +254,11 @@ def read_jpg_vggface2(
         logger.info('Loading all the datafiles..')
 
         if mode == tf.estimator.ModeKeys.TRAIN:
-            with open('/data/private/deepface/resnet_train/vggface2_train_list_tester.pkl', 'rb') as f: #FIXME
+            with open('/data/private/deepface/resnet_train/vggface2_train_list.pkl', 'rb') as f:
                 d = pickle.load(f)
             filelist = d['filelist']
         elif mode == tf.estimator.ModeKeys.EVAL:
-            with open('/data/private/deepface/resnet_train/vggface2_eval_list_tester.pkl', 'rb') as f: #FIXME
+            with open('/data/private/deepface/resnet_train/vggface2_eval_list.pkl', 'rb') as f:
                 d = pickle.load(f)
             filelist = d['filelist']
         labelpath = os.path.join(path, '*')

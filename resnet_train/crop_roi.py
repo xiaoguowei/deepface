@@ -30,13 +30,13 @@ def read_detect_write(detector, f, __path, __data):
 
 
 class RunCrop:
-    def __init__(self, ind=0, numworkers=1):
+    def __init__(self, ind=0, numworkers=20):
         self.detector = FaceDetectorDlib()
 
-        self.__path = '/data/public/rw/datasets/faces/augment_debugger'
-        self.__mode = ''
+        self.__path = '/data/public/rw/datasets/faces/vggface2'
+        self.__mode = 'train'
 
-        cachepath = '/data/private/deepface/resnet_train/0813_debugger2.pkl'
+        cachepath = '/data/private/deepface/resnet_train/filelist_vggface2_train.pkl'
         if os.path.exists(cachepath):
             with open(cachepath, 'rb') as f:
                 pkl = pickle.load(f)
@@ -87,8 +87,8 @@ class RunCrop:
                 if width < file_bbox[label_imgname]['x'] + file_bbox[label_imgname]['w'] or height < \
                         file_bbox[label_imgname]['h'] + file_bbox[label_imgname]['y']:
                     print("wow! it still hasn't been fixed!")
-            except Exception as e:
-                pass
+            except:
+                continue
 
             if count % 500 == 0:
                 print('[Worker_%d]: %d of %d completed.' % (self.ind + 1, count, len(self.filelist) / self.numworkers))
@@ -102,7 +102,7 @@ class RunCrop:
     def mergeAllBboxPkl(self):
         file_bbox = {}
         for i in range(self.numworkers):
-            with open('/data/private/deepface/resnet_train/file_bbox_' + i + '.pkl', 'rb') as f:
+            with open('/data/private/deepface/resnet_train/file_bbox_' + str(i) + '.pkl', 'rb') as f:
                 d = pickle.load(f)
             file_bbox.update(d['bounding_box'])
 
