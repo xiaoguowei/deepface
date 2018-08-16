@@ -12,7 +12,7 @@ class SplitDataset:
 
     def run(self, ind, numworkers=1):
         __cache_path = '/data/private/deepface/resnet_train/filelist_0802.pkl'
-        __parent_dir = '/data/public/rw/datasets/faces/debug/'
+        __parent_dir = '/data/public/rw/datasets/faces/vggface2_cropped/'
         __original_dir = os.path.join(__parent_dir, 'original')
         __train_dir = os.path.join(__parent_dir, 'train_split')
         __val_dir = os.path.join(__parent_dir, 'validation_split')
@@ -38,7 +38,7 @@ class SplitDataset:
             if counter % 500 == 0:
                 print('%d of %d' % (counter, len(filelist)))
 
-            if random.uniform(0, 1) <= 0.3:
+            if random.uniform(0, 1) <= 0.1:
                 self.copy_src_to_dest(file, __val_dir)
                 num_val += 1
             else:
