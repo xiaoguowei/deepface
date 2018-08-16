@@ -14,6 +14,8 @@ from sklearn.metrics import roc_curve
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
+from deepface.recognizers.recognizer_resnet_trained import FaceRecognizerResnetTrained
+
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 from deepface.confs.conf import DeepFaceConfs
@@ -58,6 +60,8 @@ class DeepFace:
             self.recognizer = FaceRecognizerVGG()
         elif recognizer == FaceRecognizerResnet.NAME:
             self.recognizer = FaceRecognizerResnet()
+        elif recognizer == FaceRecognizerResnetTrained.NAME:
+            self.recognizer = FaceRecognizerResnetTrained()
 
     def blackpink(self, visualize=True):
         imgs = ['./samples/blackpink/blackpink%d.jpg' % (i + 1) for i in range(7)]
@@ -179,7 +183,7 @@ class DeepFace:
         with open('db.pkl', 'wb') as f:
             pickle.dump(features, f, protocol=2)
 
-    def test_lfw(self, set='test', model='ssdm_resnet', visualize=True):
+    def test_lfw(self, set='test', model='baseline_resnet2', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
         else:
@@ -206,6 +210,9 @@ class DeepFace:
         elif model == 'baseline_resnet':
             recog = FaceRecognizerResnet.NAME
             just_name = 'resnet'
+        elif model == 'baseline_resnet2':
+            recog = FaceRecognizerResnetTrained.NAME
+            just_name = 'resnet152'
         elif model == 'ssdm_resnet':
             recog = FaceRecognizerResnet.NAME
             just_name = 'resnet'
