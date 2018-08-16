@@ -19,10 +19,6 @@ from deepface.utils.common import get_roi
 from deepface.detectors.detector_dlib import FaceDetectorDlib
 from deepface.recognizers.recognizer_resnet import FaceRecognizerResnet
 
-with open('/data/private/deepface/resnet_train/bbox.pkl', 'rb') as file:
-    pkl = pickle.load(file)
-    file_bbox = pkl['bounding_box']
-
 TRANSLATE_DELTA = 15
 ROTATE_ANGLE = 0.3
 CROPSIZE_DELTA = 25
@@ -177,6 +173,7 @@ def _parse_and_augment(filename, label, x, y, w, h):
     width = tf.shape(image)[1]
     height = tf.shape(image)[0]
 
+    # TODO: add roll from get_roi
     offset_height = tf.maximum(0, y + tf.cast((tf.multiply(tf.cast(h, tf.float32), random.uniform(-0.1, 0.1))), tf.int32))
     offset_width = tf.maximum(0, x + tf.cast((tf.multiply(tf.cast(w, tf.float32), random.uniform(-0.1, 0.1))), tf.int32))
     target_height = tf.minimum(height - offset_height, tf.cast((tf.multiply(tf.cast(h, tf.float32), random.uniform(0.9, 1.1))), tf.int32))
@@ -234,6 +231,10 @@ def read_jpg_vggface2(
         batch_size=128,
         prefetch_buffer_size=6,
         cache_path='/data/public/rw/workspace-annie/pkl_files/filelist_w_bbox.pkl'):
+    with open('/data/public/rw/workspace-annie/pkl_files/bbox.pkl', 'rb') as file:
+        pkl = pickle.load(file)
+        file_bbox = pkl['bounding_box']
+
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             d = pickle.load(f)

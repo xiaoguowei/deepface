@@ -26,7 +26,7 @@ class DeepFace:
     def run(self, source_path=None,
             db_path=None,
             img_path=None,
-            method='vgg',
+            method='vgg2_trained',
             visualize=True):
         if source_path:
             save_features(img_folder_path=source_path,
@@ -34,6 +34,8 @@ class DeepFace:
                           method=method)
 
         npimg = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        assert npimg is not None
+        npimg = cv2.cvtColor(npimg, cv2.COLOR_BGR2RGB)
 
         # detect
         detector = get_detector()

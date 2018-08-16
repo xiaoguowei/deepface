@@ -109,21 +109,27 @@ def resnet_model_fn(features, labels, mode):
     # Final stage:
     l = tf.layers.average_pooling2d(l, 7, 1)
     l = tf.layers.flatten(l)
+    features = l
+    # l = tf.nn.relu(l)
 
     # Dropout layer (Prevent overfitting)
     l = tf.layers.dropout(l, rate=0.5)
 
     # Output layer
-    logits = tf.layers.dense(l, units=8631)
+    logits = tf.layers.dense(l, activation=tf.nn.softmax, units=8631)
 
     # Predictions
     predictions = {
         "classes": tf.argmax(logits, axis=1, name='prediction_tensor'),
-        "probabilities": tf.nn.softmax(logits, name='softmax_tensor')
+        "probabilities": tf.nn.softmax(logits, name='softmax_tensor'),
+        "features": features
+    }
+    export_outputs = {
+        'predictions': tf.estimator.export.PredictOutput(predictions)
     }
 
     if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions, export_outputs=export_outputs)
 
     accuracy = tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])
 
