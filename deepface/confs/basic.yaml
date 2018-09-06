@@ -7,7 +7,7 @@ detector:
     score_th: 0.5
     frozen_graph: ssd/graph_inception_v2_fddb.pb
   ssd_mobilenet_v2:
-    score_th: 0.2 # TODO?
+    score_th: 0.8 # TODO?
     frozen_graph: ssd/graph_mobilenet_v2_all_180627.pb
 
 roi:
