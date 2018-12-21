@@ -106,11 +106,12 @@ class DeepFace:
             for face_idx, face in enumerate(faces):
                 face.face_feature = result['feature'][face_idx]
                 logger.debug('candidates: %s' % str(result['name'][face_idx]))
-                name, score = result['name'][face_idx][0]
-                # if score < self.recognizer.get_threshold():
-                #     continue
-                face.face_name = name
-                face.face_score = score
+                if result['name'][face_idx]:
+                    name, score = result['name'][face_idx][0]
+                    # if score < self.recognizer.get_threshold():
+                    #     continue
+                    face.face_name = name
+                    face.face_score = score
         return faces
 
     def run(self, detector='detector_ssd_mobilenet_v2', recognizer=FaceRecognizerResnet.NAME, image='./samples/blackpink/blackpink1.jpg',
