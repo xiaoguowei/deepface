@@ -69,7 +69,7 @@ class FaceRecognizerResnet(FaceRecognizer):
     def __init__(self, custom_db=None):
         self.batch_size = 4
         dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'vggface2_resnet')
-        filename = 'labels.npy'
+        filename = 'rcmalli_vggface_labels_v2.npy'
         filepath = os.path.join(dir_path, filename)
 
         if not os.path.exists(filepath):
@@ -121,7 +121,7 @@ class FaceRecognizerResnet(FaceRecognizer):
             network['out'] = output
 
         # Load weights:
-        filename = 'weight.h5'
+        filename = 'rcmalli_vggface_tf_resnet50.h5'
         filepath = os.path.join(dir_path, filename)
 
         if not os.path.exists(filepath):
