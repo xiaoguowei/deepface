@@ -183,7 +183,7 @@ class DeepFace:
         with open('db.pkl', 'wb') as f:
             pickle.dump(features, f, protocol=2)
 
-    def test_lfw(self, set='test', model='baseline_resnet2', visualize=True):
+    def test_lfw(self, set='test', model='ssdm_resnet152', visualize=True):
         if set is 'train':
             pairfile = 'pairsDevTrain.txt'
         else:
@@ -213,6 +213,10 @@ class DeepFace:
         elif model == 'baseline_resnet2':
             recog = FaceRecognizerResnetTrained.NAME
             just_name = 'resnet152'
+        elif model == 'ssdm_resnet152':
+            recog = FaceRecognizerResnetTrained.NAME
+            just_name = 'resnet152'
+            detec = 'detector_ssd_mobilenet_v2'
         elif model == 'ssdm_resnet':
             recog = FaceRecognizerResnet.NAME
             just_name = 'resnet'
