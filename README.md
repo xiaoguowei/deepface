@@ -51,7 +51,7 @@ $ cd detectors/dlib
 $ bash download.sh
 $ cd ../../recognizers/vggface/
 $ bash download.sh
-$ cd ../resnet/
+$ cd ../vggface2_resnet/
 $ bash download.sh
 ```
 
