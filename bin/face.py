@@ -160,7 +160,7 @@ class DeepFace:
         self.save_features_path(path)
         self.run(image=image, visualize=visualize)
 
-    def save_features_path(self, path="./samples/blackpink/faces/"):
+    def save_features_path(self, path="./samples/blackpink/faces/", save_to="db.pkl"):
         """
 
         :param path: folder contain images("./samples/faces/")
@@ -176,7 +176,7 @@ class DeepFace:
             features[name] = faces[0].face_feature
 
         import pickle
-        with open('db.pkl', 'wb') as f:
+        with open(save_to, 'wb') as f:
             pickle.dump(features, f, protocol=2)
 
     def test_lfw(self, set='test', model='ssdm_resnet', visualize=True):
