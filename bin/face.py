@@ -38,7 +38,7 @@ class DeepFace:
     def __init__(self, custom_db=None):
         self.detector = None
         self.recognizer = None
-        self.custom_db = None
+        self.custom_db = custom_db
 
     def set_detector(self, detector):
         if self.detector is not None and self.detector.name() == detector:
