@@ -40,7 +40,7 @@ class FaceDetectorSSD(FaceDetector):
     def _load_graph(self, graph_path):
         # We load the protobuf file from the disk and parse it to retrieve the
         # unserialized graph_def
-        with tf.gfile.GFile(graph_path, "rb") as f:
+        with tf.io.gfile.GFile(graph_path, "rb") as f:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(f.read())
 
