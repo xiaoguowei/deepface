@@ -49,6 +49,8 @@ A baseline model use dlib face detection module to crop rois. Then they will be 
 $ pip install -r requirements.txt
 $ cd detectors/dlib
 $ bash download.sh
+$ cd ../ssd
+$ bash download.sh
 $ cd ../../recognizers/vggface/
 $ bash download.sh
 $ cd ../vggface2_resnet/
