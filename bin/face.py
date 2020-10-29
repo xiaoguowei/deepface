@@ -56,9 +56,9 @@ class DeepFace:
             return
         logger.debug('set_recognizer old=%s new=%s' % (self.recognizer, recognizer))
         if recognizer == FaceRecognizerVGG.NAME:
-            self.recognizer = FaceRecognizerVGG(custom_db=custom_db)
+            self.recognizer = FaceRecognizerVGG(custom_db=self.custom_db)
         elif recognizer == FaceRecognizerResnet.NAME:
-            self.recognizer = FaceRecognizerResnet(custom_db=custom_db)
+            self.recognizer = FaceRecognizerResnet(custom_db=self.custom_db)
 
     def blackpink(self, visualize=True):
         imgs = ['./samples/blackpink/blackpink%d.jpg' % (i + 1) for i in range(7)]
