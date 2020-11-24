@@ -4,7 +4,7 @@
 
 Deep Learning Models for Face Detection/Recognition/Alignments, implemented in Tensorflow.
 
-It is being implemented...
+Here is the snippet of using this repository : [Colab](https://colab.research.google.com/drive/1vnyCYALkPWz6RlecEtEnjzvns82HU7aw?usp=sharing)
 
 ## Main Contributers
 
